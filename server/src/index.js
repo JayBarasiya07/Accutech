@@ -5,6 +5,9 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.js";
 import verifyRoutes from "./routes/verify.js";
 import { sendEmail } from "./utils/sendEmail.js";
+import Customer from "./models/Customer.js";
+import Category from "./models/Category.js";
+
 
 
 
@@ -33,6 +36,8 @@ const run = async () => {
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/verify", verifyRoutes);
+app.use("/api/customer",authRoutes);
+app.use("/api/categories", authRoutes);
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

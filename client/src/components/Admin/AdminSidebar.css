@@ -1,19 +1,356 @@
+/* Admin Sidebar Base */
 .admin-sidebar {
-  width: 200px;
+  width: 220px; /* default desktop width */
   min-height: 100vh;
   background-color: #001d6b;
   color: white;
   padding: 1rem;
+  transition: all 0.3s ease;
+  position: fixed; /* sidebar stays fixed on scroll */
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+/* Sidebar Header */
+.admin-sidebar .sidebar-header {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #fff;
+  margin-bottom: 1.5rem;
+}
+
+/* Nav Links */
+.admin-sidebar .nav-link {
+  color: white;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  text-decoration: none;
+  display: block;
+  transition: all 0.2s ease;
+}
+
+.admin-sidebar .nav-link:hover {
+  background-color: #0056b3;
+  color: white;
+}
+
+.admin-sidebar .nav-link.active {
+  background-color: #007bff;
+  font-weight: bold;
+}
+
+/* Responsive: Collapse sidebar on small screens */
+@media (max-width: 992px) {
+  .admin-sidebar {
+    position: fixed;
+    width: 180px; /* smaller on tablets */
+    left: -220px; /* hide by default */
+    top: 0;
+    height: 100%;
+    transition: all 0.3s ease;
+  }
+
+  .admin-sidebar.open {
+    left: 0; /* show sidebar */
+  }
+}
+
+/* Mobile: full screen overlay */
+@media (max-width: 576px) {
+  .admin-sidebar {
+    width: 70%; /* take 70% of screen */
+    left: -100%;
+    background-color: #001d6b;
+    padding: 1rem 1.5rem;
+  }
+
+  .admin-sidebar.open {
+    left: 0;
+  }
+}
+/* Sidebar */
+.admin-sidebar {
+  width: 220px;
+  min-height: 100vh;
+  background-color: #001d6b;
+  color: white;
+  padding: 1rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  transition: all 0.3s ease;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.admin-sidebar .sidebar-header {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.4rem;
+  margin-bottom: 1.5rem;
 }
 
 .admin-sidebar .nav-link {
   color: white;
-  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 5px;
+  margin-bottom: 0.5rem;
   font-weight: 500;
+  text-decoration: none;
+  display: block;
+  transition: all 0.2s ease;
+}
+
+.admin-sidebar .nav-link:hover {
+  background-color: #0056b3;
 }
 
 .admin-sidebar .nav-link.active {
-  background-color: #0056b3;
-  border-radius: 5px;
-  padding-left: 0.5rem;
+  background-color: #007bff;
+  font-weight: bold;
 }
+
+/* Sidebar responsive toggle */
+@media (max-width: 992px) {
+  .admin-sidebar {
+    left: -220px;
+    width: 200px;
+  }
+  .admin-sidebar.open {
+    left: 0;
+  }
+}
+
+/* Mobile overlay */
+@media (max-width: 576px) {
+  .admin-sidebar {
+    width: 70%;
+    left: -100%;
+    padding: 1rem 1.5rem;
+  }
+  .admin-sidebar.open {
+    left: 0;
+  }
+}
+
+/* Main content area */
+.admin-content {
+  margin-left: 220px;
+  padding: 1rem 2rem;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 992px) {
+  .admin-content {
+    margin-left: 0;
+  }
+}
+
+/* Dashboard cards */
+.admin-cards .card {
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.admin-cards .card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Table responsive adjustments */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.table th,
+.table td {
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+/* Button spacing for table actions */
+.table button {
+  margin-bottom: 0.2rem;
+}
+
+/* Responsive adjustments for cards & table */
+@media (max-width: 768px) {
+  .admin-cards .card-text {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-cards {
+    flex-direction: column;
+  }
+  .admin-cards .card {
+    margin-bottom: 1rem;
+  }
+}
+
+
+
+
+
+/* AdminCustomerList.css */
+
+/* General padding for the page */
+.admin-customer-list {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* Page heading */
+.admin-customer-list h2 {
+  font-weight: 600;
+  color: #001d6b;
+  margin-bottom: 20px;
+}
+
+/* Search and filter inputs */
+.admin-customer-list .form-control,
+.admin-customer-list .form-select {
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+/* Add button */
+.admin-customer-list .btn-success {
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease-in-out;
+}
+
+.admin-customer-list .btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Table styling */
+.admin-customer-list table {
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.admin-customer-list table th {
+  background-color: #001d6b;
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+}
+
+.admin-customer-list table td {
+  vertical-align: middle;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+/* Hover effect on rows */
+.admin-customer-list table tbody tr:hover {
+  background-color: #e9f2ff;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Action buttons */
+.admin-customer-list .btn-warning,
+.admin-customer-list .btn-danger,
+.admin-customer-list .btn-info {
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  margin-bottom: 2px;
+}
+
+/* Pagination styling */
+.admin-customer-list .pagination .page-item.active .page-link {
+  background-color: #001d6b;
+  border-color: #001d6b;
+  color: #fff;
+}
+
+.admin-customer-list .pagination .page-link {
+  border-radius: 6px;
+  color: #001d6b;
+  margin: 0 2px;
+}
+
+/* Modal styling */
+.admin-customer-list .modal-content {
+  border-radius: 10px;
+}
+
+.admin-customer-list .modal-header {
+  background-color: #001d6b;
+  color: #fff;
+  border-bottom: none;
+  font-weight: 600;
+}
+
+.admin-customer-list .modal-body {
+  padding: 20px;
+  background-color: #f8f9fa;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .admin-customer-list .row > div {
+    margin-bottom: 10px;
+  }
+
+  .admin-customer-list table th,
+  .admin-customer-list table td {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .admin-customer-list .btn-success {
+    width: 100%;
+  }
+}
+
+
+
+/* src/components/Admin/AdminSidebar.css */
+
+/* Make sidebar full height */
+.sidebar {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding-top: 20px;
+  border-right: 1px solid #dee2e6;
+}
+
+/* Sidebar links */
+.sidebar a {
+  display: block;
+  padding: 10px 20px;
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.sidebar a:hover {
+  background-color: #e9ecef;
+  color: #000;
+  border-radius: 5px;
+}
+
+/* Responsive: collapse sidebar on small screens */
+@media (max-width: 768px) {
+  .sidebar {
+    min-height: auto;
+    border-right: none;
+  }
+}
+
