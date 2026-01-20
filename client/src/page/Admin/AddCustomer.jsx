@@ -83,7 +83,7 @@ const AddCustomer = () => {
 
     // Numeric validations
     if (customer.racks && isNaN(customer.racks)) newErrors.racks = "Racks must be a number";
-    if (customer.roomAge && isNaN(customer.roomAge)) newErrors.roomAge = "Room Age must be a number";
+    
 
     // Mobile validation
     if (customer.mobile && !/^\d{10}$/.test(customer.mobile))
