@@ -43,14 +43,14 @@ const AdminDashboard = () => {
       <AdminSidebar />
 
       {/* Main content */}
-      <div className="admin-content p-3" style={{ width: "100%" }}>
+      <div className="admin-content p-4" style={{ width: "100%" }}>
         {/* Cards */}
-        <Row className="mb-4">
+        <Row className="mb-5">
           <Col md={4} sm={12}>
             <Card bg="primary" text="white" className="mb-2">
               <Card.Body>
                 <Card.Title>Total Customers</Card.Title>
-                <Card.Text style={{ fontSize: "1.5rem" }}>
+                <Card.Text style={{ fontSize: "2rem" }}>
                   {customers.length}
                 </Card.Text>
               </Card.Body>
@@ -60,7 +60,7 @@ const AdminDashboard = () => {
             <Card bg="success" text="white" className="mb-2">
               <Card.Body>
                 <Card.Title>Total Users</Card.Title>
-                <Card.Text style={{ fontSize: "1.5rem" }}>{totalUsers}</Card.Text>
+                <Card.Text style={{ fontSize: "2rem" }}>{totalUsers}</Card.Text>
               </Card.Body>
             </Card>
           </Col>
@@ -68,14 +68,14 @@ const AdminDashboard = () => {
             <Card bg="warning" text="white" className="mb-2">
               <Card.Body>
                 <Card.Title>Total Admins</Card.Title>
-                <Card.Text style={{ fontSize: "1.5rem" }}>{totalAdmins}</Card.Text>
+                <Card.Text style={{ fontSize: "2rem" }}>{totalAdmins}</Card.Text>
               </Card.Body>
             </Card>
           </Col>
         </Row>
 
         {/* Customers Table */}
-        <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="d-flex justify-content-between align-items-center mb-4">
           <h2>Customer List</h2>
           <Button variant="success">Add Customer</Button>
         </div>

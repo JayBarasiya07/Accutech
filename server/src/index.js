@@ -1,16 +1,11 @@
 import express from "express";
 import cors from "cors";
-import connectDB from "./config/db.js";   // <-- This path must exist
 import dotenv from "dotenv";
+import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import verifyRoutes from "./routes/verify.js";
-import { sendEmail } from "./utils/sendEmail.js";
-import Customer from "./models/Customer.js";
-import Category from "./models/Category.js";
-
-
-
-
+import categoryRoutes from "./routes/categoryRoutes.js";
+import cooling from "./routes/cooling.js";
 
 dotenv.config();
 const app = express();
@@ -20,24 +15,13 @@ app.use(express.json());
 // Connect to MongoDB
 connectDB();
 
-const run = async () => {
-  try {
-    await sendEmail({
-      to: "recipient@example.com",
-      subject: "Test Email ✔",
-      text: "Hello! This is a test email sent from Node.js 😎",
-      html: "<h1>Hello!</h1><p>This is a test email sent from Node.js 😎</p>",
-    });
-  } catch (err) {
-    console.error(err);
-  }
-};
-
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/verify", verifyRoutes);
-app.use("/api/customer",authRoutes);
-app.use("/api/categories", authRoutes);
+app.use("/api/categories", categoryRoutes); // ← this is key
+app.use("/api/cooling",cooling
+  
+);
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

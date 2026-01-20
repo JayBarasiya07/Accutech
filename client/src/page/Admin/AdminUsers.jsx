@@ -2,29 +2,58 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Table, Button, Form, Modal, Row, Col } from "react-bootstrap";
 import AdminSidebar from "../../components/Admin/AdminSidebar";
+import { useNavigate } from "react-router-dom";
 
 const AdminUsers = ({ searchTerm = "" }) => {
   const [users, setUsers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
 
-  // Fetch users
+  const token = localStorage.getItem("token"); // JWT token after login
+
+  // -------------------------------
+  // Redirect if not logged in
+  // -------------------------------
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+    }
+  }, [token, navigate]);
+
+  // -------------------------------
+  // Fetch users from backend
+  // -------------------------------
   const loadUsers = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/users");
+      const res = await fetch("http://localhost:8000/api/users", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        alert("Access denied. Admins only.");
+        navigate("/login");
+        return;
+      }
+
       const data = await res.json();
       setUsers(data);
     } catch (err) {
       console.error("Failed to load users:", err);
     }
-  }, []);
+  }, [token, navigate]);
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    if (token) loadUsers();
+  }, [loadUsers, token]);
 
-  // Filter by search term
-  const filtered = useMemo(() => {
+  // -------------------------------
+  // Filter users by search term
+  // -------------------------------
+  const filteredUsers = useMemo(() => {
     if (!searchTerm) return users;
     return users.filter(
       (u) =>
@@ -33,29 +62,68 @@ const AdminUsers = ({ searchTerm = "" }) => {
     );
   }, [users, searchTerm]);
 
-  const openEdit = (user) => {
+  // -------------------------------
+  // Open edit modal
+  // -------------------------------
+  const openEditModal = (user) => {
     setCurrentUser(user);
     setShowModal(true);
   };
 
-  const updateRole = async () => {
+  // -------------------------------
+  // Update user role
+  // -------------------------------
+  const updateUserRole = async () => {
+    if (!currentUser.role) return;
+
     try {
-      await fetch(`http://localhost:8000/api/users/${currentUser._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: currentUser.role }),
-      });
+      const res = await fetch(
+        `http://localhost:8000/api/users/${currentUser._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ role: currentUser.role }),
+        }
+      );
+
+      if (!res.ok) {
+        const error = await res.json();
+        alert(error.error || "Update failed");
+        return;
+      }
+
       setShowModal(false);
+      setCurrentUser(null);
       loadUsers();
     } catch (err) {
-      console.error("Update failed:", err);
+      console.error("Role update failed:", err);
     }
   };
 
+  // -------------------------------
+  // Delete user
+  // -------------------------------
   const deleteUser = async (id) => {
-    if (!window.confirm("Delete this user?")) return;
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
+
     try {
-      await fetch(`http://localhost:8000/api/users/${id}`, { method: "DELETE" });
+      const res = await fetch(`http://localhost:8000/api/users/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        alert(error.error || "Delete failed");
+        return;
+      }
+
       loadUsers();
     } catch (err) {
       console.error("Delete failed:", err);
@@ -85,27 +153,27 @@ const AdminUsers = ({ searchTerm = "" }) => {
             </tr>
           </thead>
           <tbody>
-            {filtered.length > 0 ? (
-              filtered.map((u, i) => (
-                <tr key={u._id}>
-                  <td>{i + 1}</td>
-                  <td>{u.name}</td>
-                  <td>{u.email}</td>
-                  <td>{u.role}</td>
-                  <td>{u.status || "Active"}</td>
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user, index) => (
+                <tr key={user._id}>
+                  <td>{index + 1}</td>
+                  <td>{user.name}</td>
+                  <td>{user.email}</td>
+                  <td>{user.role}</td>
+                  <td>{user.status || "Active"}</td>
                   <td>
                     <Button
                       size="sm"
                       variant="warning"
                       className="me-2 mb-1"
-                      onClick={() => openEdit(u)}
+                      onClick={() => openEditModal(user)}
                     >
                       Edit
                     </Button>
                     <Button
                       size="sm"
                       variant="danger"
-                      onClick={() => deleteUser(u._id)}
+                      onClick={() => deleteUser(user._id)}
                     >
                       Delete
                     </Button>
@@ -142,7 +210,11 @@ const AdminUsers = ({ searchTerm = "" }) => {
                     <option value="admin">Admin</option>
                   </Form.Select>
                 </Form.Group>
-                <Button className="mt-3" onClick={updateRole}>
+                <Button
+                  className="mt-3"
+                  onClick={updateUserRole}
+                  variant="primary"
+                >
                   Update
                 </Button>
               </Form>

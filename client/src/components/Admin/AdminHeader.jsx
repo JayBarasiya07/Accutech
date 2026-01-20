@@ -5,7 +5,7 @@ const AdminHeader = ({ onSearch }) => {
   return (
     <Navbar bg="dark" variant="dark" expand="lg" sticky="top" className="px-3">
       <Container fluid>
-        <Navbar.Brand href="/admin/dashboard">Admin Panel</Navbar.Brand>
+        <Navbar.Brand href="/admin/dashboard">Accutech</Navbar.Brand>
 
         <Form className="d-flex ms-auto">
           <FormControl
