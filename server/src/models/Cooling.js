@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const categorySchema = new mongoose.Schema(
+const coolingSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -12,6 +12,6 @@ const categorySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Category = mongoose.model("Category", categorySchema);
+const Cooling = mongoose.model("Cooling", coolingSchema);
 
-export default Category;
+export default Cooling;

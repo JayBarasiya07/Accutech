@@ -4,69 +4,66 @@ import AdminSidebar from "../../components/Admin/AdminSidebar";
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState([]);
-  const [name, setName] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [coolings, setCoolings] = useState([]);
+
+  const [categoryName, setCategoryName] = useState("");
+  const [coolingName, setCoolingName] = useState("");
+
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showCoolingModal, setShowCoolingModal] = useState(false);
+
   const [editCategory, setEditCategory] = useState(null);
-  const [error, setError] = useState(""); // For validation errors
-  const [loading, setLoading] = useState(false); // Optional: show loading state
+  const [editCooling, setEditCooling] = useState(null);
 
-  // -------------------------------
-  // Fetch categories from backend
-  // -------------------------------
-  const loadCategories = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("http://localhost:8000/api/categories");
-      if (!res.ok) throw new Error("Failed to fetch categories");
-      const data = await res.json();
-      setCategories(data);
-    } catch (err) {
-      console.error("Fetch error:", err);
-      setError("Failed to load categories");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [error, setError] = useState("");
 
+  // ---------------- LOAD DATA ----------------
   useEffect(() => {
-    loadCategories();
-  }, []);
+    const loadData = async () => {
+      try {
+        const [catRes, coolRes] = await Promise.all([
+          fetch("http://localhost:8000/api/categories"),
+          fetch("http://localhost:8000/api/cooling"),
+        ]);
 
-  // -------------------------------
-  // Add new category
-  // -------------------------------
+        if (!catRes.ok || !coolRes.ok) throw new Error("Failed to fetch data");
+
+        const catData = await catRes.json();
+        const coolData = await coolRes.json();
+
+        setCategories(catData);
+        setCoolings(coolData);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load data");
+      }
+    };
+
+    loadData();
+  }, []); // ✅ no synchronous setState warning
+
+  // ---------------- CATEGORY CRUD ----------------
   const addCategory = async () => {
-    if (!name.trim()) {
-      setError("Category name cannot be empty");
-      return;
-    }
+    if (!categoryName.trim()) return setError("Category required");
     setError("");
     try {
       const res = await fetch("http://localhost:8000/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name: categoryName }),
       });
-
       if (!res.ok) throw new Error("Failed to add category");
-
       const newCat = await res.json();
-      setCategories((prev) => [...prev, newCat]);
-      setName("");
+      setCategories([newCat, ...categories]);
+      setCategoryName("");
     } catch (err) {
-      console.error("Add failed:", err);
+      console.error(err);
       setError("Failed to add category");
     }
   };
 
-  // -------------------------------
-  // Update category
-  // -------------------------------
   const updateCategory = async () => {
-    if (!editCategory.name.trim()) {
-      setError("Category name cannot be empty");
-      return;
-    }
+    if (!editCategory?.name.trim()) return setError("Category required");
     setError("");
     try {
       const res = await fetch(
@@ -77,88 +74,115 @@ const AdminCategories = () => {
           body: JSON.stringify({ name: editCategory.name }),
         }
       );
-
-      if (!res.ok) throw new Error("Failed to update category");
-
-      const updatedCat = await res.json();
-      setCategories((prev) =>
-        prev.map((cat) => (cat._id === updatedCat._id ? updatedCat : cat))
+      const updated = await res.json();
+      setCategories(
+        categories.map((cat) => (cat._id === updated._id ? updated : cat))
       );
-      setShowModal(false);
-      setEditCategory(null);
+      setShowCategoryModal(false);
     } catch (err) {
-      console.error("Update failed:", err);
+      console.error(err);
       setError("Failed to update category");
     }
   };
 
-  // -------------------------------
-  // Delete category
-  // -------------------------------
   const deleteCategory = async (id) => {
-    if (!window.confirm("Delete this category?")) return;
-    setError("");
     try {
-      const res = await fetch(`http://localhost:8000/api/categories/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Delete failed");
-
-      setCategories((prev) => prev.filter((cat) => cat._id !== id));
-    } catch (err) {
-      console.error(err);
+      await fetch(`http://localhost:8000/api/categories/${id}`, { method: "DELETE" });
+      setCategories(categories.filter((c) => c._id !== id));
+    } catch {
       setError("Failed to delete category");
     }
   };
 
+  // ---------------- COOLING CRUD ----------------
+  const addCooling = async () => {
+    if (!coolingName.trim()) return setError("Cooling required");
+    setError("");
+    try {
+      const res = await fetch("http://localhost:8000/api/cooling", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: coolingName }),
+      });
+      if (!res.ok) throw new Error("Failed to add cooling");
+      const newCool = await res.json();
+      setCoolings([newCool, ...coolings]);
+      setCoolingName("");
+    } catch {
+      setError("Failed to add cooling");
+    }
+  };
+
+  const updateCooling = async () => {
+    if (!editCooling?.name.trim()) return setError("Cooling required");
+    setError("");
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/cooling/${editCooling._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: editCooling.name }),
+        }
+      );
+      const updated = await res.json();
+      setCoolings(
+        coolings.map((c) => (c._id === updated._id ? updated : c))
+      );
+      setShowCoolingModal(false);
+    } catch {
+      setError("Failed to update cooling");
+    }
+  };
+
+  const deleteCooling = async (id) => {
+    try {
+      await fetch(`http://localhost:8000/api/cooling/${id}`, { method: "DELETE" });
+      setCoolings(coolings.filter((c) => c._id !== id));
+    } catch {
+      setError("Failed to delete cooling");
+    }
+  };
+
+  // ---------------- RENDER ----------------
   return (
-    <div className="admin-container">
+    <div className="admin-container d-flex">
       <AdminSidebar />
-      <h3>Manage Categories</h3>
+      <div className="admin-content p-3 w-100">
+        {error && <Alert variant="danger">{error}</Alert>}
 
-      {error && <Alert variant="danger">{error}</Alert>}
-
-      {/* Add new category */}
-      <Form
-        className="d-flex mb-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          addCategory();
-        }}
-      >
-        <Form.Control
-          placeholder="Enter category name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Button className="ms-2 btn-success" type="submit">
-          Add
-        </Button>
-      </Form>
-
-      {loading ? (
-        <p>Loading categories...</p>
-      ) : (
-        <Table striped bordered hover responsive>
+        {/* CATEGORY */}
+        <h3>Categories</h3>
+        <Form className="d-flex mb-2">
+          <Form.Control
+            placeholder="Category"
+            value={categoryName}
+            onChange={(e) => setCategoryName(e.target.value)}
+          />
+          <Button onClick={addCategory} className="ms-2 btn-success">
+            Add
+          </Button>
+        </Form>
+        <Table striped bordered hover>
           <thead>
             <tr>
               <th>#</th>
-              <th>Category Name</th>
+              <th>Name</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {categories.map((cat, i) => (
-              <tr key={cat._id}>
+            {categories.map((c, i) => (
+              <tr key={c._id}>
                 <td>{i + 1}</td>
-                <td>{cat.name}</td>
+                <td>{c.name}</td>
                 <td>
                   <Button
                     size="sm"
                     variant="warning"
                     onClick={() => {
-                      setEditCategory(cat);
-                      setShowModal(true);
+                      setEditCategory(c);
+                      setShowCategoryModal(true);
                     }}
                   >
                     Edit
@@ -166,7 +190,7 @@ const AdminCategories = () => {
                   <Button
                     size="sm"
                     variant="danger"
-                    onClick={() => deleteCategory(cat._id)}
+                    onClick={() => deleteCategory(c._id)}
                   >
                     Delete
                   </Button>
@@ -175,32 +199,101 @@ const AdminCategories = () => {
             ))}
           </tbody>
         </Table>
-      )}
 
-      {/* Edit Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Edit Category</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {editCategory && (
-            <>
-              <Form.Control
-                value={editCategory.name}
-                onChange={(e) =>
-                  setEditCategory({ ...editCategory, name: e.target.value })
-                }
-              />
-              <Button
-                className="mt-3 btn-primary"
-                onClick={updateCategory}
-              >
-                Update
-              </Button>
-            </>
-          )}
-        </Modal.Body>
-      </Modal>
+        {/* COOLING */}
+        <h3 className="mt-4">Cooling Types</h3>
+        <Form className="d-flex mb-2">
+          <Form.Control
+            placeholder="Cooling"
+            value={coolingName}
+            onChange={(e) => setCoolingName(e.target.value)}
+          />
+          <Button onClick={addCooling} className="ms-2 btn-success">
+            Add
+          </Button>
+        </Form>
+        <Table striped bordered hover>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {coolings.map((c, i) => (
+              <tr key={c._id}>
+                <td>{i + 1}</td>
+                <td>{c.name}</td>
+                <td>
+                  <Button
+                    size="sm"
+                    variant="warning"
+                    onClick={() => {
+                      setEditCooling(c);
+                      setShowCoolingModal(true);
+                    }}
+                  >
+                    Edit
+                  </Button>{" "}
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => deleteCooling(c._id)}
+                  >
+                    Delete
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+
+        {/* MODALS */}
+        <Modal show={showCategoryModal} onHide={() => setShowCategoryModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Edit Category</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Control
+              value={editCategory?.name || ""}
+              onChange={(e) =>
+                setEditCategory({ ...editCategory, name: e.target.value })
+              }
+            />
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowCategoryModal(false)}>
+              Close
+            </Button>
+            <Button variant="primary" onClick={updateCategory}>
+              Save
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        <Modal show={showCoolingModal} onHide={() => setShowCoolingModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Edit Cooling Type</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Control
+              value={editCooling?.name || ""}
+              onChange={(e) =>
+                setEditCooling({ ...editCooling, name: e.target.value })
+              }
+            />
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowCoolingModal(false)}>
+              Close
+            </Button>
+            <Button variant="primary" onClick={updateCooling}>
+              Save
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      </div>
     </div>
   );
 };

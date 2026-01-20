@@ -1,3 +1,4 @@
+// routes/category.js
 import express from "express";
 import Category from "../models/Category.js";
 
@@ -15,16 +16,17 @@ router.get("/", async (req, res) => {
 
 // POST new category
 router.post("/", async (req, res) => {
-  const { name } = req.body;
-  if (!name) return res.status(400).json({ error: "Name is required" });
+  const { category, cooling } = req.body;
+  if (!category || !cooling)
+    return res.status(400).json({ error: "Category and Cooling are required" });
 
   try {
-    const existing = await Category.findOne({ name });
-    if (existing) return res.status(400).json({ error: "Category exists" });
+    const existing = await Category.findOne({ category });
+    if (existing) return res.status(400).json({ error: "Category already exists" });
 
-    const newCategory = new Category({ name });
-    await newCategory.save();
-    res.status(201).json(newCategory);
+    const newCat = new Category({ category, cooling });
+    await newCat.save();
+    res.status(201).json(newCat);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -32,13 +34,17 @@ router.post("/", async (req, res) => {
 
 // PUT update category
 router.put("/:id", async (req, res) => {
-  const { name } = req.body;
+  const { category, cooling } = req.body;
+  if (!category || !cooling)
+    return res.status(400).json({ error: "Category and Cooling are required" });
+
   try {
     const updated = await Category.findByIdAndUpdate(
       req.params.id,
-      { name },
-      { new: true }
+      { category, cooling },
+      { new: true, runValidators: true }
     );
+    if (!updated) return res.status(404).json({ error: "Category not found" });
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -48,7 +54,8 @@ router.put("/:id", async (req, res) => {
 // DELETE category
 router.delete("/:id", async (req, res) => {
   try {
-    await Category.findByIdAndDelete(req.params.id);
+    const deleted = await Category.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: "Category not found" });
     res.json({ message: "Category deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });

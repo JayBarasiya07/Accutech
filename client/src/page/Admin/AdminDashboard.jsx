@@ -1,58 +1,65 @@
 import React, { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Table, Button } from "react-bootstrap";
+import { Row, Col, Card, Table, Button, Alert } from "react-bootstrap";
 import AdminSidebar from "../../components/Admin/AdminSidebar";
- // optional custom CSS for styling
 
 const AdminDashboard = () => {
   const [customers, setCustomers] = useState([]);
   const [users, setUsers] = useState([]);
+  const [error] = useState("");
 
-  // Fetch customers
-  const fetchCustomers = async () => {
-    try {
-      const res = await fetch("http://localhost:8000/api/customers");
-      const data = await res.json();
-      setCustomers(data);
-    } catch (err) {
-      console.error("Failed to fetch customers:", err);
-    }
-  };
+  const token = localStorage.getItem("token"); // JWT auth token if needed
 
-  // Fetch users
-  const fetchUsers = async () => {
-    try {
-      const res = await fetch("http://localhost:8000/api/users");
-      const data = await res.json();
-      setUsers(data);
-    } catch (err) {
-      console.error("Failed to fetch users:", err);
-    }
-  };
-
+  // ---------------- FETCH DATA ----------------
   useEffect(() => {
-    fetchCustomers();
-    fetchUsers();
-  }, []);
+    const fetchData = async () => {
+      try {
+        // Fetch customers and users in parallel
+        const [custRes, usersRes] = await Promise.all([
+          fetch("http://localhost:8000/api/customers", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch("http://localhost:8000/api/users", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        if (!custRes.ok || !usersRes.ok) {
+          throw new Error("Failed to fetch data");
+        }
+
+        const [customersData, usersData] = await Promise.all([
+          custRes.json(),
+          usersRes.json(),
+        ]);
+
+        setCustomers(customersData);
+        setUsers(usersData);
+      } catch (err) {
+        console.error(err);
+       
+      }
+    };
+
+    fetchData();
+  }, [token]);
 
   const totalUsers = users.filter((u) => u.role === "user").length;
   const totalAdmins = users.filter((u) => u.role === "admin").length;
 
   return (
     <div className="d-flex">
-      {/* Sidebar */}
       <AdminSidebar />
 
-      {/* Main content */}
-      <div className="admin-content p-4" style={{ width: "100%" }}>
-        {/* Cards */}
+      <div className="admin-content p-4 w-100">
+        {error && <Alert variant="danger">{error}</Alert>}
+
+        {/* ---------------- CARDS ---------------- */}
         <Row className="mb-5">
           <Col md={4} sm={12}>
             <Card bg="primary" text="white" className="mb-2">
               <Card.Body>
                 <Card.Title>Total Customers</Card.Title>
-                <Card.Text style={{ fontSize: "2rem" }}>
-                  {customers.length}
-                </Card.Text>
+                <Card.Text style={{ fontSize: "2rem" }}>{customers.length}</Card.Text>
               </Card.Body>
             </Card>
           </Col>
@@ -67,17 +74,17 @@ const AdminDashboard = () => {
           <Col md={4} sm={12}>
             <Card bg="warning" text="white" className="mb-2">
               <Card.Body>
-                <Card.Title>Total Admins</Card.Title>
+                <Card.Title>Total Admins Access</Card.Title>
                 <Card.Text style={{ fontSize: "2rem" }}>{totalAdmins}</Card.Text>
               </Card.Body>
             </Card>
           </Col>
         </Row>
 
-        {/* Customers Table */}
+        {/* ---------------- CUSTOMER TABLE ---------------- */}
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h2>Customer List</h2>
-          <Button variant="success">Add Customer</Button>
+         
         </div>
 
         <Table striped bordered hover responsive>
@@ -102,14 +109,14 @@ const AdminDashboard = () => {
               <th>Racks</th>
               <th>Cooling</th>
               <th>Room Age</th>
-              <th>Actions</th>
+              
             </tr>
           </thead>
           <tbody>
             {customers.map((c, index) => (
               <tr key={c._id}>
                 <td>{index + 1}</td>
-                <td>{c.SrNo}</td>
+                <td>{c.srNo || c.SrNo}</td>
                 <td>{c.category}</td>
                 <td>{c.name}</td>
                 <td>{c.salesPerson}</td>
@@ -127,14 +134,7 @@ const AdminDashboard = () => {
                 <td>{c.racks}</td>
                 <td>{c.cooling}</td>
                 <td>{c.roomAge}</td>
-                <td>
-                  <Button variant="info" size="sm" className="me-2">
-                    Edit
-                  </Button>
-                  <Button variant="danger" size="sm">
-                    Delete
-                  </Button>
-                </td>
+              
               </tr>
             ))}
           </tbody>
