@@ -1,8 +1,8 @@
 // src/pages/Admin/AdminUsers.jsx
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Table, Button, Form, Modal, Row, Col } from "react-bootstrap";
-import AdminSidebar from "../../components/Admin/AdminSidebar";
 import { useNavigate } from "react-router-dom";
+import AdminSidebar from "../../components/Admin/AdminSidebar";
 
 const permissionFields = [
   "srNo","category","salesPerson","offices","plants","location",
@@ -15,23 +15,22 @@ const AdminUsers = ({ searchTerm = "" }) => {
   const [showModal, setShowModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
-
   const token = localStorage.getItem("token");
 
+  // Redirect if no token
   useEffect(() => {
     if (!token) navigate("/login");
   }, [token, navigate]);
 
+  // Fetch users
   const loadUsers = useCallback(async () => {
     try {
       const res = await fetch("http://localhost:8000/api/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!res.ok) {
-        alert("Access denied");
+        alert("Access denied or failed to fetch users");
         return;
       }
 
@@ -39,6 +38,7 @@ const AdminUsers = ({ searchTerm = "" }) => {
       setUsers(data);
     } catch (err) {
       console.error(err);
+      alert("Failed to fetch users");
     }
   }, [token]);
 
@@ -46,6 +46,7 @@ const AdminUsers = ({ searchTerm = "" }) => {
     loadUsers();
   }, [loadUsers]);
 
+  // Filter users by search term
   const filteredUsers = useMemo(() => {
     if (!searchTerm) return users;
     return users.filter(
@@ -55,14 +56,16 @@ const AdminUsers = ({ searchTerm = "" }) => {
     );
   }, [users, searchTerm]);
 
+  // Open modal to edit permissions
   const openPermissionModal = (user) => {
     setCurrentUser({
       ...user,
-      permissions: user.permissions || {}
+      permissions: user.permissions || {},
     });
     setShowModal(true);
   };
 
+  // Toggle a permission checkbox
   const togglePermission = (key) => {
     setCurrentUser((prev) => ({
       ...prev,
@@ -73,6 +76,7 @@ const AdminUsers = ({ searchTerm = "" }) => {
     }));
   };
 
+  // Save updated permissions
   const savePermissions = async () => {
     try {
       const res = await fetch(
@@ -95,22 +99,33 @@ const AdminUsers = ({ searchTerm = "" }) => {
       setShowModal(false);
       setCurrentUser(null);
       loadUsers();
+      alert("Permissions updated successfully!");
     } catch (err) {
       console.error(err);
+      alert("Failed to update permissions");
     }
   };
 
+  // Delete user
   const deleteUser = async (id) => {
-    if (!window.confirm("Delete this user?")) return;
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
 
     try {
-      await fetch(`http://localhost:8000/api/users/${id}`, {
+      const res = await fetch(`http://localhost:8000/api/users/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (!res.ok) {
+        alert("Failed to delete user");
+        return;
+      }
+
       loadUsers();
+      alert("User deleted successfully!");
     } catch (err) {
       console.error(err);
+      alert("Failed to delete user");
     }
   };
 
@@ -123,7 +138,7 @@ const AdminUsers = ({ searchTerm = "" }) => {
       <Col md={10} className="p-4">
         <h2>User Permission Manager</h2>
 
-        <Table striped bordered hover responsive>
+        <Table striped bordered hover responsive className="mt-3">
           <thead>
             <tr>
               <th>#</th>
@@ -135,37 +150,48 @@ const AdminUsers = ({ searchTerm = "" }) => {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user, index) => (
-              <tr key={user._id}>
-                <td>{index + 1}</td>
-                <td>{user.name}</td>
-                <td>{user.email}</td>
-                <td>{user.role}</td>
-                <td>{Object.keys(user.permissions || {}).length}</td>
-                <td>
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    className="me-2"
-                    onClick={() => openPermissionModal(user)}
-                  >
-                    Permissions
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => deleteUser(user._id)}
-                  >
-                    Delete
-                  </Button>
-                </td>
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user, index) => (
+                <tr key={user._id}>
+                  <td>{index + 1}</td>
+                  <td>{user.name}</td>
+                  <td>{user.email}</td>
+                  <td>{user.role}</td>
+                  <td>{Object.keys(user.permissions || {}).filter(k => user.permissions[k]).length}</td>
+                  <td>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      className="me-2"
+                      onClick={() => openPermissionModal(user)}
+                    >
+                      Permissions
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => deleteUser(user._id)}
+                    >
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} className="text-center">No users found</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </Table>
 
         {/* Permission Modal */}
-        <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
+        <Modal
+          show={showModal}
+          onHide={() => setShowModal(false)}
+          size="lg"
+          centered
+        >
           <Modal.Header closeButton>
             <Modal.Title>Edit Permissions</Modal.Title>
           </Modal.Header>
@@ -184,7 +210,6 @@ const AdminUsers = ({ searchTerm = "" }) => {
                     </Col>
                   ))}
                 </Row>
-
                 <Button className="mt-3" onClick={savePermissions}>
                   Save Permissions
                 </Button>
