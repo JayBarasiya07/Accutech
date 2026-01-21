@@ -19,7 +19,7 @@ import ForgotPassword from "./components/ForgotPassword";
 import VerifyOTP from "./components/verify-otp";
 import ResetPassword from "./components/ResetPassword";
 import Profile from "./page/User/Profile";  
-import Settings from "./page/User/Settings";
+
 
 // ---------------- ADMIN ----------------
 import AdminHeader from "./components/Admin/AdminHeader";
@@ -63,9 +63,9 @@ const App = () => {
       <Routes>
         {/* ---------------- USER ROUTES ---------------- */}
         <Route path="/" element={<UserLayout><HomePage /></UserLayout>} />
-        <Route path="user/about" element={<UserLayout><AboutPage /></UserLayout>} />
+        <Route path="/about" element={<UserLayout><AboutPage /></UserLayout>} />
         <Route path="/contact" element={<UserLayout><ContactPage /></UserLayout>} />
-        <Route path="User/" element={<UserLayout><CustomerList /></UserLayout>} />
+        <Route path="/customers" element={<UserLayout><CustomerList /></UserLayout>} />
         <Route path="/login" element={<UserLayout><Login /></UserLayout>} />
         <Route path="/register" element={<UserLayout><Register /></UserLayout>} />
         <Route path="/otp" element={<UserLayout><OTP /></UserLayout>} />
@@ -73,7 +73,7 @@ const App = () => {
         <Route path="/forgot-password" element={<UserLayout><ForgotPassword /></UserLayout>} />
         <Route path="/reset-password" element={<UserLayout><ResetPassword /></UserLayout>} />
         <Route path="/profile" element={<UserLayout><Profile /></UserLayout>} />
-        <Route path="/settings" element={<UserLayout><Settings /></UserLayout>} />
+       
 
         {/* ---------------- ADMIN ROUTES ---------------- */}
         <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />

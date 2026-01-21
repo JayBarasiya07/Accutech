@@ -7,32 +7,43 @@ import axios from "axios";
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [alert, setAlert] = useState({ type: "", message: "" });
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Handle input changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setAlert({ type: "", message: "" });
+    setAlert({ type: "", message: "" }); // reset alert
   };
 
+  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const res = await axios.post("http://localhost:8000/api/auth/login", form);
 
-      // Save JWT in localStorage
+      // Save JWT token and user info
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      // Notify Header to update immediately
+      window.dispatchEvent(new Event("storage"));
 
       // Show success message
       setAlert({ type: "success", message: "Login successful!" });
 
       // Redirect based on role
-      if (res.data.role === "admin") navigate("/admin");
-      else navigate("/user");
+      if (res.data.role === "admin") navigate("/admin", { replace: true });
+      else navigate("/", { replace: true });
+
     } catch (error) {
       setAlert({
         type: "danger",
         message: error.response?.data?.message || "Login failed",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -71,8 +82,13 @@ export default function Login() {
           <Link to="/forgot-password">Forgot Password?</Link>
         </div>
 
-        <Button variant="primary" type="submit" className="w-100 mb-3">
-          Login
+        <Button
+          variant="primary"
+          type="submit"
+          className="w-100 mb-3"
+          disabled={loading}
+        >
+          {loading ? "Logging in..." : "Login"}
         </Button>
 
         <div className="text-center mb-2">

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Container, Table, Form, Row, Col } from "react-bootstrap";
 
-// Sample customer data
+// Sample static data
 const initialCustomers = [
   {
     id: 1,
@@ -41,7 +41,6 @@ const initialCustomers = [
     cooling: "AC Split",
     roomAge: "5 years",
   },
-  // Add more customers here...
 ];
 
 const CleanCustomerList = () => {
@@ -50,7 +49,7 @@ const CleanCustomerList = () => {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [decisionFilter, setDecisionFilter] = useState("");
 
-  // Filtered customers
+  // Filter customers based on search and filters
   const filteredCustomers = useMemo(() => {
     return customers.filter((c) => {
       const matchesSearch =
@@ -70,7 +69,7 @@ const CleanCustomerList = () => {
     <Container className="mt-5">
       <h2 className="mb-4">Customer List</h2>
 
-      {/* Search and Filters */}
+      {/* Search & Filters */}
       <Row className="mb-3">
         <Col md={4} className="mb-2">
           <Form.Control
@@ -80,25 +79,25 @@ const CleanCustomerList = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </Col>
-
         <Col md={3} className="mb-2">
-          <Form.Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+          <Form.Select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
             <option value="">All Categories</option>
             {[...new Set(customers.map((c) => c.category))].map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
+              <option key={cat} value={cat}>{cat}</option>
             ))}
           </Form.Select>
         </Col>
-
         <Col md={3} className="mb-2">
-          <Form.Select value={decisionFilter} onChange={(e) => setDecisionFilter(e.target.value)}>
+          <Form.Select
+            value={decisionFilter}
+            onChange={(e) => setDecisionFilter(e.target.value)}
+          >
             <option value="">All Decisions</option>
             {[...new Set(customers.map((c) => c.decision))].map((dec) => (
-              <option key={dec} value={dec}>
-                {dec}
-              </option>
+              <option key={dec} value={dec}>{dec}</option>
             ))}
           </Form.Select>
         </Col>
@@ -152,9 +151,7 @@ const CleanCustomerList = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="17" className="text-center">
-                No customers found.
-              </td>
+              <td colSpan="17" className="text-center">No customers found.</td>
             </tr>
           )}
         </tbody>
