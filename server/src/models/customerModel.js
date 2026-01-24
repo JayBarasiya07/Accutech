@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 const customerSchema = new mongoose.Schema({
   srNo: String,           // changed from Sr_No.
   category: String,
+  customername : String,
   salesPerson: String,
   offices: String,
   plants: String,

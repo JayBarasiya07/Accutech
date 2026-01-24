@@ -1,6 +1,10 @@
 // routes/category.js
 import express from "express";
 import Category from "../models/Category.js";
+import authMiddleware from "../middlewares/authMiddleware.js";
+import { isAdmin, isSuperAdmin } from "../middlewares/authMiddleware.js";
+
+
 
 const router = express.Router();
 

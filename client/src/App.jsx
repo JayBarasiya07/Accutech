@@ -20,7 +20,6 @@ import VerifyOTP from "./components/verify-otp";
 import ResetPassword from "./components/ResetPassword";
 import Profile from "./page/User/Profile";  
 
-
 // ---------------- ADMIN ----------------
 import AdminHeader from "./components/Admin/AdminHeader";
 import AdminFooter from "./components/Admin/AdminFooter";
@@ -28,64 +27,82 @@ import AdminSidebar from "./components/Admin/AdminSidebar";
 import AdminDashboard from "./page/Admin/AdminDashboard";
 import AdminAboutPage from "./page/Admin/AdminAbout";
 import AdminCustomerList from "./page/Admin/AdminCustomerList";
-import AdminUsers from "./page/Admin/AdminUsers";
+// import AdminUsers from "./page/Admin/AdminUsers";
 import AdminCategories from "./page/Admin/AdminCategories";
 import AddCustomer from "./page/Admin/AddCustomer";
 
-// Admin Layout
-const AdminLayout = ({ children }) => {
-  return (
-    <div className="d-flex min-vh-100">
-      <AdminSidebar />
-      <div className="flex-grow-1">
-        <AdminHeader />
-        <main className="p-3">{children}</main>
-        <AdminFooter />
-      </div>
-    </div>
-  );
-};
+// ---------------- SUPER ADMIN ----------------
+import SuperAdminHeader from "./components/SuperAdmin/SuperAdminHeader";
+import SuperAdminSidebar from "./components/SuperAdmin/SuperAdminSidebar";
+import SuperAdminDashboard from "./page/SuperAdmin/SuperAdminDashboard";
+import SuperAdminUsers from "./page/SuperAdmin/SuperAdminUsers";
+
+// ---------------- LAYOUTS ----------------
 
 // User Layout
-const UserLayout = ({ children }) => {
-  return (
-    <div className="d-flex flex-column min-vh-100">
-      <Header />
-      <main className="flex-grow-1">{children}</main>
-      <Footer />
+const UserLayout = ({ children }) => (
+  <div className="d-flex flex-column min-vh-100">
+    <Header />
+    <main className="flex-grow-1">{children}</main>
+    <Footer />
+  </div>
+);
+
+// Admin Layout
+const AdminLayout = ({ children }) => (
+  <div className="d-flex min-vh-100">
+    <AdminSidebar />
+    <div className="flex-grow-1">
+      <AdminHeader />
+      <main className="p-3">{children}</main>
+      <AdminFooter />
     </div>
-  );
-};
+  </div>
+);
 
-const App = () => {
-  return (
-    <Router>
-      <Routes>
-        {/* ---------------- USER ROUTES ---------------- */}
-        <Route path="/" element={<UserLayout><HomePage /></UserLayout>} />
-        <Route path="/about" element={<UserLayout><AboutPage /></UserLayout>} />
-        <Route path="/contact" element={<UserLayout><ContactPage /></UserLayout>} />
-        <Route path="/customers" element={<UserLayout><CustomerList /></UserLayout>} />
-        <Route path="/login" element={<UserLayout><Login /></UserLayout>} />
-        <Route path="/register" element={<UserLayout><Register /></UserLayout>} />
-        <Route path="/otp" element={<UserLayout><OTP /></UserLayout>} />
-        <Route path="/verify-otp" element={<UserLayout><VerifyOTP /></UserLayout>} />
-        <Route path="/forgot-password" element={<UserLayout><ForgotPassword /></UserLayout>} />
-        <Route path="/reset-password" element={<UserLayout><ResetPassword /></UserLayout>} />
-        <Route path="/profile" element={<UserLayout><Profile /></UserLayout>} />
-       
+// SuperAdmin Layout
+const SuperAdminLayout = ({ children }) => (
+  <div className="d-flex min-vh-100">
+    <SuperAdminSidebar />
+    <div className="flex-grow-1">
+      <SuperAdminHeader />
+      <main className="p-3">{children}</main>
+    </div>
+  </div>
+);
 
-        {/* ---------------- ADMIN ROUTES ---------------- */}
-        <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-        <Route path="/admin/about" element={<AdminLayout><AdminAboutPage /></AdminLayout>} />
-        <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
-        <Route path="/admin/categories" element={<AdminLayout><AdminCategories /></AdminLayout>} />
-        <Route path="/admin/customers" element={<AdminLayout><AdminCustomerList /></AdminLayout>} />
-        <Route path="/admin/customers/add" element={<AdminLayout><AddCustomer /></AdminLayout>} />
-        <Route path="/admin/customers/edit/:id" element={<AdminLayout><AddCustomer /></AdminLayout>} />
-      </Routes>
-    </Router>
-  );
-};
+// ---------------- ROUTES ----------------
+const App = () => (
+  <Router>
+    <Routes>
+      {/* ---------------- USER ROUTES ---------------- */}
+      <Route path="/" element={<UserLayout><HomePage /></UserLayout>} />
+      <Route path="/about" element={<UserLayout><AboutPage /></UserLayout>} />
+      <Route path="/contact" element={<UserLayout><ContactPage /></UserLayout>} />
+      <Route path="/customers" element={<UserLayout><CustomerList /></UserLayout>} />
+      <Route path="/login" element={<UserLayout><Login /></UserLayout>} />
+      <Route path="/register" element={<UserLayout><Register /></UserLayout>} />
+      <Route path="/otp" element={<UserLayout><OTP /></UserLayout>} />
+      <Route path="/verify-otp" element={<UserLayout><VerifyOTP /></UserLayout>} />
+      <Route path="/forgot-password" element={<UserLayout><ForgotPassword /></UserLayout>} />
+      <Route path="/reset-password" element={<UserLayout><ResetPassword /></UserLayout>} />
+      <Route path="/profile" element={<UserLayout><Profile /></UserLayout>} />
+
+      {/* ---------------- ADMIN ROUTES ---------------- */}
+      <Route path="/admin/dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+      <Route path="/admin/about" element={<AdminLayout><AdminAboutPage /></AdminLayout>} />
+      {/* <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} /> */}
+      <Route path="/admin/categories" element={<AdminLayout><AdminCategories /></AdminLayout>} />
+      <Route path="/admin/customers" element={<AdminLayout><AdminCustomerList /></AdminLayout>} />
+      <Route path="/admin/customers/add" element={<AdminLayout><AddCustomer /></AdminLayout>} />
+      <Route path="/admin/customers/edit/:id" element={<AdminLayout><AddCustomer /></AdminLayout>} />
+
+      {/* ---------------- SUPER ADMIN ROUTES ---------------- */}
+      <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
+      <Route path="/superadmin/users" element={<SuperAdminUsers />} />
+      {/* Add more SuperAdmin routes here as needed */}
+    </Routes>
+  </Router>
+);
 
 export default App;

@@ -24,27 +24,60 @@ export default function Register({ onNewUser }) {
     setForm({ ...form, [e.target.name]: e.target.value });
 
   // Form validation
-  const validateForm = () => {
-    const { name, email, mobile, password, confirmPassword } = form;
+ // Advanced validateForm
+const validateForm = () => {
+  const { name, email, mobile, password, confirmPassword } = form;
 
-    if (name.trim().length < 2)
-      return { valid: false, message: "Name must be at least 2 characters" };
+  // ----------- Name Validation -----------
+  if (!name.trim()) {
+    return { valid: false, message: "Name is required" };
+  }
+  if (name.trim().length < 2) {
+    return { valid: false, message: "Name must be at least 2 characters long" };
+  }
 
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(email))
-      return { valid: false, message: "Enter a valid email address" };
+  // ----------- Email Validation -----------
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email) {
+    return { valid: false, message: "Email is required" };
+  }
+  if (!emailPattern.test(email)) {
+    return { valid: false, message: "Please enter a valid email address" };
+  }
 
-    if (!/^\d{10}$/.test(mobile))
-      return { valid: false, message: "Enter a valid 10-digit mobile number" };
+  // ----------- Mobile Validation -----------
+  if (!mobile) {
+    return { valid: false, message: "Mobile number is required" };
+  }
+  if (!/^\d{10}$/.test(mobile)) {
+    return { valid: false, message: "Mobile number must be 10 digits" };
+  }
 
-    if (password.length < 6)
-      return { valid: false, message: "Password must be at least 6 characters" };
+  // ----------- Password Validation -----------
+  if (!password) {
+    return { valid: false, message: "Password is required" };
+  }
+  if (password.length < 6) {
+    return { valid: false, message: "Password must be at least 6 characters" };
+  }
+  // Stronger password: at least 1 uppercase, 1 lowercase, 1 number, 1 special char
+  const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?#&])[A-Za-z\d@$!%*?#&]{6,}$/;
+  if (!strongPassword.test(password)) {
+    return { 
+      valid: false, 
+      message: "Password must contain uppercase, lowercase, number, and special character" 
+    };
+  }
 
-    if (password !== confirmPassword)
-      return { valid: false, message: "Passwords do not match" };
+  // ----------- Confirm Password Validation -----------
+  if (password !== confirmPassword) {
+    return { valid: false, message: "Passwords do not match" };
+  }
 
-    return { valid: true };
-  };
+  // ----------- All Valid -----------
+  return { valid: true };
+};
+
 
   // Handle form submit
   const handleSubmit = async (e) => {

@@ -1,63 +1,43 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Container, Table, Form, Row, Col } from "react-bootstrap";
-
-// Sample static data
-const initialCustomers = [
-  {
-    id: 1,
-    category: "IT",
-    salesPerson: "Rajesh Kumar",
-    offices: 3,
-    plants: 2,
-    location: "Mumbai, Delhi, Bangalore",
-    contactPerson: "Amit Sharma",
-    department: "IT Infrastructure",
-    designation: "IT Manager",
-    mobile: "9876543210",
-    email: "amit.sharma@techsol.com",
-    decision: "Centralised",
-    currentUPS: "Yes - APC 10KVA",
-    scopeSRC: "High",
-    racks: 15,
-    cooling: "Precision AC",
-    roomAge: "3 years",
-  },
-  {
-    id: 2,
-    category: "Manufacturing",
-    salesPerson: "Priya Singh",
-    offices: 2,
-    plants: 4,
-    location: "Ahmedabad, Pune",
-    contactPerson: "Vikram Joshi",
-    department: "Production",
-    designation: "Plant Manager",
-    mobile: "9876501234",
-    email: "vikram.joshi@steelworks.com",
-    decision: "Decentralised",
-    currentUPS: "No",
-    scopeSRC: "Medium",
-    racks: 8,
-    cooling: "AC Split",
-    roomAge: "5 years",
-  },
-];
+import axios from "axios";
 
 const CleanCustomerList = () => {
-  const [customers] = useState(initialCustomers);
+  const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [decisionFilter, setDecisionFilter] = useState("");
 
-  // Filter customers based on search and filters
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:8000/api/customers", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setCustomers(res.data);
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+      }
+    };
+
+    fetchCustomers();
+  }, []); // runs once on mount
+
   const filteredCustomers = useMemo(() => {
     return customers.filter((c) => {
       const matchesSearch =
-        c.salesPerson.toLowerCase().includes(search.toLowerCase()) ||
-        c.contactPerson.toLowerCase().includes(search.toLowerCase()) ||
-        c.email.toLowerCase().includes(search.toLowerCase()) ||
-        c.category.toLowerCase().includes(search.toLowerCase());
+        c.srNo?.toLowerCase().includes(search.toLowerCase()) ||
+        c.mobile?.toLowerCase().includes(search.toLowerCase()) ||
+        c.ContactPerson?.toLowerCase().includes(search.toLowerCase()) ||
+        c.salesPerson?.toLowerCase().includes(search.toLowerCase()) ||
+        c.contactPerson?.toLowerCase().includes(search.toLowerCase()) ||
+        c.email?.toLowerCase().includes(search.toLowerCase()) ||
+        c.category?.toLowerCase().includes(search.toLowerCase());
 
+      
       const matchesCategory = categoryFilter ? c.category === categoryFilter : true;
       const matchesDecision = decisionFilter ? c.decision === decisionFilter : true;
 
@@ -69,32 +49,27 @@ const CleanCustomerList = () => {
     <Container className="mt-5">
       <h2 className="mb-4">Customer List</h2>
 
-      {/* Search & Filters */}
       <Row className="mb-3">
-        <Col md={4} className="mb-2">
+        <Col md={4}>
           <Form.Control
             type="text"
-            placeholder="Search by sales person, contact, email or category..."
+            placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </Col>
-        <Col md={3} className="mb-2">
-          <Form.Select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-          >
+
+        <Col md={3}>
+          <Form.Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
             <option value="">All Categories</option>
             {[...new Set(customers.map((c) => c.category))].map((cat) => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </Form.Select>
         </Col>
-        <Col md={3} className="mb-2">
-          <Form.Select
-            value={decisionFilter}
-            onChange={(e) => setDecisionFilter(e.target.value)}
-          >
+
+        <Col md={3}>
+          <Form.Select value={decisionFilter} onChange={(e) => setDecisionFilter(e.target.value)}>
             <option value="">All Decisions</option>
             {[...new Set(customers.map((c) => c.decision))].map((dec) => (
               <option key={dec} value={dec}>{dec}</option>
@@ -103,10 +78,10 @@ const CleanCustomerList = () => {
         </Col>
       </Row>
 
-      {/* Table */}
       <Table striped bordered hover responsive>
         <thead className="table-dark">
           <tr>
+            <th>No.</th>
             <th>Sr No</th>
             <th>Category</th>
             <th>Sales Person</th>
@@ -129,8 +104,9 @@ const CleanCustomerList = () => {
         <tbody>
           {filteredCustomers.length > 0 ? (
             filteredCustomers.map((c, index) => (
-              <tr key={c.id}>
+              <tr key={c._id}>
                 <td>{index + 1}</td>
+                <td>{c.srNo}</td>
                 <td>{c.category}</td>
                 <td>{c.salesPerson}</td>
                 <td>{c.offices}</td>
@@ -151,7 +127,7 @@ const CleanCustomerList = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="17" className="text-center">No customers found.</td>
+              <td colSpan="17" className="text-center">No customers found</td>
             </tr>
           )}
         </tbody>

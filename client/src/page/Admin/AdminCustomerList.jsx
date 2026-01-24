@@ -61,7 +61,7 @@ const AdminCustomerList = () => {
   }
 
   const columns = [
-    "No","SrNo","Category","SalesPerson","Offices","Plants","Location","ContactPerson",
+    "No","SrNo","Category","CustomerName","SalesPerson","Offices","Plants","Location","ContactPerson",
     "Department","Designation","Mobile","Email","Decision","CurrentUPS","ScopeSRC","Racks",
     "Cooling","RoomAge"
   ];
@@ -113,6 +113,7 @@ const AdminCustomerList = () => {
                     <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                     <td>{cust.srNo || "-"}</td>
                     <td>{cust.category || "-"}</td>
+                    <td>{cust.customername || "-"}</td>
                     <td>{cust.salesPerson || "-"}</td>
                     <td>{cust.offices || "-"}</td>
                     <td>{cust.plants || "-"}</td>

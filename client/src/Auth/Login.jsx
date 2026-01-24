@@ -10,33 +10,41 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Handle input changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setAlert({ type: "", message: "" }); // reset alert
+    setAlert({ type: "", message: "" });
   };
 
-  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const res = await axios.post("http://localhost:8000/api/auth/login", form);
+      const { token, user } = res.data;
 
-      // Save JWT token and user info
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      // Clear previous session
+      localStorage.clear();
 
-      // Notify Header to update immediately
+      // Save new session
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("role", user.role);
+
       window.dispatchEvent(new Event("storage"));
 
-      // Show success message
       setAlert({ type: "success", message: "Login successful!" });
 
-      // Redirect based on role
-      if (res.data.role === "admin") navigate("/admin", { replace: true });
-      else navigate("/", { replace: true });
-
+      // Role based redirect
+      if (user.role === "superadmin") {
+        navigate("/superadmin/dashboard", { replace: true });
+      } else if (user.role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (user.role === "user") {
+        navigate("/", { replace: true });
+      } else {
+        navigate("/login", { replace: true });
+      }
     } catch (error) {
       setAlert({
         type: "danger",
@@ -54,11 +62,10 @@ export default function Login() {
       {alert.message && <Alert variant={alert.type}>{alert.message}</Alert>}
 
       <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3" controlId="formEmail">
-          <Form.Label>Email address</Form.Label>
+        <Form.Group className="mb-3">
+          <Form.Label>Email</Form.Label>
           <Form.Control
             type="email"
-            placeholder="Enter email"
             name="email"
             value={form.email}
             onChange={handleChange}
@@ -66,11 +73,10 @@ export default function Login() {
           />
         </Form.Group>
 
-        <Form.Group className="mb-3" controlId="formPassword">
+        <Form.Group className="mb-3">
           <Form.Label>Password</Form.Label>
           <Form.Control
             type="password"
-            placeholder="Password"
             name="password"
             value={form.password}
             onChange={handleChange}
@@ -78,25 +84,20 @@ export default function Login() {
           />
         </Form.Group>
 
-        <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="d-flex justify-content-between mb-3">
           <Link to="/forgot-password">Forgot Password?</Link>
         </div>
 
-        <Button
-          variant="primary"
-          type="submit"
-          className="w-100 mb-3"
-          disabled={loading}
-        >
+        <Button type="submit" className="w-100" disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </Button>
 
-        <div className="text-center mb-2">
-          <span className="text-muted">Don't have an account?</span>
+        <div className="text-center mt-3">
+          <span>Don't have an account?</span>
         </div>
 
         <Link to="/register">
-          <Button variant="outline-primary" className="w-100">
+          <Button variant="outline-primary" className="w-100 mt-2">
             Register
           </Button>
         </Link>

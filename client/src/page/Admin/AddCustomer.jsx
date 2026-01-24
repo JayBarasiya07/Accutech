@@ -1,19 +1,24 @@
 import React, { useEffect, useState } from "react";
-import { Form, Button, Row, Col, Alert } from "react-bootstrap";
+import { Form, Button, Row, Col, Alert, Spinner } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import AdminSidebar from "../../components/Admin/AdminSidebar";
 
 const AddCustomer = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // If editing
-  const token = localStorage.getItem("token");
+  const { id } = useParams(); // Editing ID if any
+  const token = localStorage.getItem("admin_token"); // Use role-specific token
 
   const [categories, setCategories] = useState([]);
   const [coolings, setCoolings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [generalError, setGeneralError] = useState("");
+  const [errors, setErrors] = useState({});
+
   const [customer, setCustomer] = useState({
     srNo: "",
     category: "",
+    customername: "",
     salesPerson: "",
     offices: "",
     plants: "",
@@ -30,12 +35,10 @@ const AddCustomer = () => {
     cooling: "",
     roomAge: "",
   });
-  const [errors, setErrors] = useState({});
-  const [generalError, setGeneralError] = useState("");
 
-  // ---------------------- FETCH DATA ----------------------
+  // ---------------------- FETCH CATEGORIES, COOLING & CUSTOMER ----------------------
   useEffect(() => {
-    const loadData = async () => {
+    const fetchData = async () => {
       try {
         const [catRes, coolRes] = await Promise.all([
           axios.get("http://localhost:8000/api/categories", {
@@ -49,7 +52,6 @@ const AddCustomer = () => {
         setCategories(catRes.data);
         setCoolings(coolRes.data);
 
-        // If editing, fetch customer
         if (id) {
           const custRes = await axios.get(
             `http://localhost:8000/api/customers/${id}`,
@@ -60,26 +62,28 @@ const AddCustomer = () => {
       } catch (err) {
         console.error(err);
         setGeneralError("Failed to load data. Please try again.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadData();
+    fetchData();
   }, [id, token]);
 
   // ---------------------- HANDLE CHANGE ----------------------
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setCustomer({ ...customer, [name]: value });
-    setErrors({ ...errors, [name]: "" });
+    setCustomer((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   // ---------------------- VALIDATION ----------------------
   const validate = () => {
     const newErrors = {};
-
     const requiredFields = [
       "srNo",
       "category",
+      "customername",
       "salesPerson",
       "offices",
       "plants",
@@ -112,9 +116,10 @@ const AddCustomer = () => {
     return newErrors;
   };
 
-  // ---------------------- SUBMIT ----------------------
+  // ---------------------- HANDLE SUBMIT ----------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setGeneralError("");
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -130,9 +135,11 @@ const AddCustomer = () => {
         );
         alert("Customer updated successfully!");
       } else {
-        await axios.post("http://localhost:8000/api/customers", customer, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axios.post(
+          "http://localhost:8000/api/customers",
+          customer,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         alert("Customer added successfully!");
       }
       navigate("/admin/customers");
@@ -143,6 +150,8 @@ const AddCustomer = () => {
       );
     }
   };
+
+  if (loading) return <Spinner animation="border" className="m-5" />;
 
   return (
     <Row className="g-0">
@@ -163,7 +172,6 @@ const AddCustomer = () => {
         {generalError && <Alert variant="danger">{generalError}</Alert>}
 
         <Form onSubmit={handleSubmit}>
-          {/* Row 1 */}
           <Row className="mb-3">
             <Col md={3}>
               <Form.Label>SrNo</Form.Label>
@@ -173,9 +181,7 @@ const AddCustomer = () => {
                 onChange={handleChange}
                 isInvalid={!!errors.srNo}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.srNo}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.srNo}</Form.Control.Feedback>
             </Col>
 
             <Col md={3}>
@@ -188,14 +194,21 @@ const AddCustomer = () => {
               >
                 <option value="">Select Category</option>
                 {categories.map((cat) => (
-                  <option key={cat._id} value={cat.name}>
-                    {cat.name}
-                  </option>
+                  <option key={cat._id} value={cat.name}>{cat.name}</option>
                 ))}
               </Form.Select>
-              <Form.Control.Feedback type="invalid">
-                {errors.category}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.category}</Form.Control.Feedback>
+            </Col>
+
+            <Col md={3}>
+              <Form.Label>Customer Name</Form.Label>
+              <Form.Control
+                name="customername"
+                value={customer.customername}
+                onChange={handleChange}
+                isInvalid={!!errors.customername}
+              />
+              <Form.Control.Feedback type="invalid">{errors.customername}</Form.Control.Feedback>
             </Col>
 
             <Col md={3}>
@@ -206,11 +219,12 @@ const AddCustomer = () => {
                 onChange={handleChange}
                 isInvalid={!!errors.salesPerson}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.salesPerson}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.salesPerson}</Form.Control.Feedback>
             </Col>
+          </Row>
 
+          {/* Row 2 */}
+          <Row className="mb-3">
             <Col md={3}>
               <Form.Label>Offices</Form.Label>
               <Form.Control
@@ -219,14 +233,9 @@ const AddCustomer = () => {
                 onChange={handleChange}
                 isInvalid={!!errors.offices}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.offices}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.offices}</Form.Control.Feedback>
             </Col>
-          </Row>
 
-          {/* Row 2 */}
-          <Row className="mb-3">
             <Col md={3}>
               <Form.Label>Plants</Form.Label>
               <Form.Control
@@ -235,9 +244,7 @@ const AddCustomer = () => {
                 onChange={handleChange}
                 isInvalid={!!errors.plants}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.plants}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.plants}</Form.Control.Feedback>
             </Col>
 
             <Col md={3}>
@@ -248,24 +255,23 @@ const AddCustomer = () => {
                 onChange={handleChange}
                 isInvalid={!!errors.location}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.location}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.location}</Form.Control.Feedback>
             </Col>
 
             <Col md={3}>
-              <Form.Label>Contact Person</Form.Label>
+              <Form.Label>Customer Contact Person</Form.Label>
               <Form.Control
                 name="contactPerson"
                 value={customer.contactPerson}
                 onChange={handleChange}
                 isInvalid={!!errors.contactPerson}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.contactPerson}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.contactPerson}</Form.Control.Feedback>
             </Col>
+          </Row>
 
+          {/* Row 3 */}
+          <Row className="mb-3">
             <Col md={3}>
               <Form.Label>Department</Form.Label>
               <Form.Control
@@ -274,14 +280,9 @@ const AddCustomer = () => {
                 onChange={handleChange}
                 isInvalid={!!errors.department}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.department}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.department}</Form.Control.Feedback>
             </Col>
-          </Row>
 
-          {/* Row 3 */}
-          <Row className="mb-3">
             <Col md={3}>
               <Form.Label>Designation</Form.Label>
               <Form.Control
@@ -290,9 +291,7 @@ const AddCustomer = () => {
                 onChange={handleChange}
                 isInvalid={!!errors.designation}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.designation}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.designation}</Form.Control.Feedback>
             </Col>
 
             <Col md={3}>
@@ -303,9 +302,7 @@ const AddCustomer = () => {
                 onChange={handleChange}
                 isInvalid={!!errors.mobile}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.mobile}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.mobile}</Form.Control.Feedback>
             </Col>
 
             <Col md={3}>
@@ -317,11 +314,12 @@ const AddCustomer = () => {
                 onChange={handleChange}
                 isInvalid={!!errors.email}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.email}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.email}</Form.Control.Feedback>
             </Col>
+          </Row>
 
+          {/* Row 4 */}
+          <Row className="mb-3">
             <Col md={3}>
               <Form.Label>Decision</Form.Label>
               <Form.Control
@@ -330,14 +328,9 @@ const AddCustomer = () => {
                 onChange={handleChange}
                 isInvalid={!!errors.decision}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.decision}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.decision}</Form.Control.Feedback>
             </Col>
-          </Row>
 
-          {/* Row 4 */}
-          <Row className="mb-3">
             <Col md={3}>
               <Form.Label>Current UPS</Form.Label>
               <Form.Control
@@ -364,11 +357,12 @@ const AddCustomer = () => {
                 onChange={handleChange}
                 isInvalid={!!errors.racks}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.racks}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.racks}</Form.Control.Feedback>
             </Col>
+          </Row>
 
+          {/* Row 5 */}
+          <Row className="mb-3">
             <Col md={3}>
               <Form.Label>Cooling</Form.Label>
               <Form.Select
@@ -379,30 +373,19 @@ const AddCustomer = () => {
               >
                 <option value="">Select Cooling</option>
                 {coolings.map((c) => (
-                  <option key={c._id} value={c.name}>
-                    {c.name}
-                  </option>
+                  <option key={c._id} value={c.name}>{c.name}</option>
                 ))}
               </Form.Select>
-              <Form.Control.Feedback type="invalid">
-                {errors.cooling}
-              </Form.Control.Feedback>
+              <Form.Control.Feedback type="invalid">{errors.cooling}</Form.Control.Feedback>
             </Col>
-          </Row>
 
-          {/* Row 5 */}
-          <Row className="mb-3">
             <Col md={3}>
               <Form.Label>Room Age</Form.Label>
               <Form.Control
                 name="roomAge"
                 value={customer.roomAge}
                 onChange={handleChange}
-                isInvalid={!!errors.roomAge}
               />
-              <Form.Control.Feedback type="invalid">
-                {errors.roomAge}
-              </Form.Control.Feedback>
             </Col>
           </Row>
 
