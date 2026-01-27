@@ -1,14 +1,12 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// ------------------ VERIFY TOKEN ------------------
+// ---------------- VERIFY TOKEN ----------------
 export const verifyToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader || !authHeader.startsWith("Bearer "))
       return res.status(401).json({ message: "No token provided" });
-    }
 
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
@@ -19,34 +17,27 @@ export const verifyToken = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    if (error.name === "TokenExpiredError") {
+    console.error("Token error:", error);
+    if (error.name === "TokenExpiredError")
       return res.status(401).json({ message: "Token expired. Please login again." });
-    }
     return res.status(401).json({ message: "Invalid token" });
   }
 };
 
-// ------------------ SUPERADMIN CHECK ------------------
-export const isSuperAdmin = (req, res, next) => {
-  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-
-  if (req.user.role !== "superadmin") {
-    return res.status(403).json({ message: "Forbidden: Only SuperAdmin allowed" });
-  }
-
-  next();
-};
-
-// ------------------ ADMIN CHECK ------------------
+// ---------------- ADMIN CHECK ----------------
 export const isAdmin = (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-
-  if (!["admin", "superadmin"].includes(req.user.role)) {
-    return res.status(403).json({ message: "Forbidden: Only Admins allowed" });
-  }
-
+  if (!["admin", "superadmin"].includes(req.user.role))
+    return res.status(403).json({ message: "Admins only" });
   next();
 };
 
-// 👇 Default export (optional, can still import default if needed)
+// ---------------- SUPERADMIN CHECK ----------------
+export const isSuperAdmin = (req, res, next) => {
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+  if (req.user.role !== "superadmin")
+    return res.status(403).json({ message: "SuperAdmin only" });
+  next();
+};
+
 export default verifyToken;

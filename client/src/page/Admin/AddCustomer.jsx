@@ -259,7 +259,7 @@ const AddCustomer = () => {
             </Col>
 
             <Col md={3}>
-              <Form.Label>Customer Contact Person</Form.Label>
+              <Form.Label>Contact Person</Form.Label>
               <Form.Control
                 name="contactPerson"
                 value={customer.contactPerson}

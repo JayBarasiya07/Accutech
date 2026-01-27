@@ -84,6 +84,7 @@ const CleanCustomerList = () => {
             <th>No.</th>
             <th>Sr No</th>
             <th>Category</th>
+            <th>Customer Name</th>
             <th>Sales Person</th>
             <th>Offices</th>
             <th>Plants</th>
@@ -108,6 +109,7 @@ const CleanCustomerList = () => {
                 <td>{index + 1}</td>
                 <td>{c.srNo}</td>
                 <td>{c.category}</td>
+                <td>{c.customername}</td>
                 <td>{c.salesPerson}</td>
                 <td>{c.offices}</td>
                 <td>{c.plants}</td>

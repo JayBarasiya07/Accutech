@@ -12,6 +12,7 @@ import profileRoutes from "./routes/profileRoutes.js";
 import aboutRoutes from "./routes/aboutRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 // import dashboard from "./routes/dashboard.js";
+import adminRouters from "./routes/adminRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -32,6 +33,7 @@ app.use("/api/customers", customerRouter);
 app.use("/api/about", aboutRoutes);
 app.use("/api/users", userRoutes); // Added user routes
 // app.use("/api", dashboard); // Dashboard routes
+app.use("/api/admin", adminRouters); // Admin routes
 
 // Start the server
 const PORT = process.env.PORT || 8000;
