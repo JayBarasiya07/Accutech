@@ -1,13 +1,23 @@
-import React, { useEffect, useState } from "react";
-import { Row, Col, Card, Table, Button, Alert, Spinner } from "react-bootstrap";
+import React, { useEffect, useState, useMemo } from "react";
+import { Row, Col, Card, Table, Button, Alert, Spinner, Badge, Form } from "react-bootstrap";
 import AdminSidebar from "../../components/Admin/AdminSidebar";
+import { saveAs } from "file-saver";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 const AdminDashboard = () => {
   const [customers, setCustomers] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCustomers, setSelectedCustomers] = useState([]);
+  const [selectAllAcrossPages, setSelectAllAcrossPages] = useState(false);
 
+  const rowsPerPage = 10;
   const token = localStorage.getItem("token");
 
   // ---------------- FETCH DATA ----------------
@@ -15,7 +25,6 @@ const AdminDashboard = () => {
     setLoading(true);
     setError("");
     try {
-      // Ensure token exists
       if (!token) throw new Error("Token missing! Please login again.");
 
       const [custRes, usersRes] = await Promise.all([
@@ -35,9 +44,12 @@ const AdminDashboard = () => {
 
       setCustomers(customersData);
       setUsers(usersData);
+      setSuccess("Data fetched successfully ✅");
+      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       console.error(err);
-      setError(err.message || "Something went wrong while fetching data");
+      setError(err.message || "Something went wrong ❌");
+      setTimeout(() => setError(""), 4000);
     } finally {
       setLoading(false);
     }
@@ -47,62 +59,206 @@ const AdminDashboard = () => {
     fetchData();
   }, [token]);
 
+  // Reset page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectAllAcrossPages(false);
+    setSelectedCustomers([]);
+  }, [search]);
+
   // ---------------- COUNTS ----------------
   const totalUsers = users.filter(u => u.role === "user").length;
   const totalAdmins = users.filter(u => u.role === "admin").length;
+  const totalCustomers = customers.length;
+
+  // ---------------- FILTER CUSTOMERS ----------------
+  const filteredCustomers = useMemo(() => {
+    const s = search.toLowerCase();
+    return customers.filter(c =>
+      (c.name || c.customername || "").toLowerCase().includes(s) ||
+      (c.srNo || "").toLowerCase().includes(s) ||
+      (c.category || "").toLowerCase().includes(s)
+    );
+  }, [customers, search]);
+
+  // ---------------- PAGINATION ----------------
+  const totalPages = Math.ceil(filteredCustomers.length / rowsPerPage);
+  const indexOfLast = currentPage * rowsPerPage;
+  const indexOfFirst = indexOfLast - rowsPerPage;
+  const currentCustomers = filteredCustomers.slice(indexOfFirst, indexOfLast);
+
+  // ---------------- HANDLE CHECKBOX ----------------
+  const handleSelectOne = (e, id) => {
+    if (e.target.checked) {
+      setSelectedCustomers(prev => [...prev, id]);
+    } else {
+      setSelectedCustomers(prev => prev.filter(cid => cid !== id));
+      setSelectAllAcrossPages(false);
+    }
+  };
+
+  const handleSelectAllPage = (e) => {
+    if (e.target.checked) {
+      const pageIds = currentCustomers.map(c => c._id);
+      setSelectedCustomers(prev => [...new Set([...prev, ...pageIds])]);
+    } else {
+      const pageIds = currentCustomers.map(c => c._id);
+      setSelectedCustomers(prev => prev.filter(id => !pageIds.includes(id)));
+      setSelectAllAcrossPages(false);
+    }
+  };
+
+  const handleSelectAllAcrossPages = (e) => {
+    if (e.target.checked) {
+      setSelectAllAcrossPages(true);
+      setSelectedCustomers(filteredCustomers.map(c => c._id));
+    } else {
+      setSelectAllAcrossPages(false);
+      setSelectedCustomers([]);
+    }
+  };
+
+  // ---------------- EXPORT FUNCTIONS ----------------
+  const customersToExport = selectedCustomers.length > 0 ? 
+    customers.filter(c => selectedCustomers.includes(c._id)) : filteredCustomers;
+
+  const exportExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(customersToExport.map(c => ({
+      "Sr No": c.srNo,
+      "Category": c.category,
+      "Customer Name": c.name || c.customername,
+      "Sales Person": c.salesPerson,
+      "Offices": c.offices,
+      "Plants": c.plants,
+      "Location": c.location,
+      "Contact Person": c.contactPerson,
+      "Department": c.department,
+      "Designation": c.designation,
+      "Mobile": c.mobile,
+      "Email": c.email,
+      "Decision": c.decision,
+      "Current UPS": c.currentUPS,
+      "Scope SRC": c.scopeSRC,
+      "Racks": c.racks,
+      "Cooling": c.cooling,
+      "Room Age": c.roomAge
+    })));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Customers");
+    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    saveAs(new Blob([excelBuffer], { type: "application/octet-stream" }), "customers.xlsx");
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    const tableColumn = [
+      "No.", "Sr No", "Category", "Customer Name", "Sales Person", "Offices",
+      "Plants", "Location", "Contact Person", "Department", "Designation",
+      "Mobile", "Email", "Decision", "Current UPS", "Scope SRC", "Racks", "Cooling", "Room Age"
+    ];
+    const tableRows = customersToExport.map((c, i) => [
+      i + 1,
+      c.srNo,
+      c.category,
+      c.name || c.customername,
+      c.salesPerson,
+      c.offices,
+      c.plants,
+      c.location,
+      c.contactPerson,
+      c.department,
+      c.designation,
+      c.mobile,
+      c.email,
+      c.decision,
+      c.currentUPS,
+      c.scopeSRC,
+      c.racks,
+      c.cooling,
+      c.roomAge
+    ]);
+
+    doc.text("Customer List", 14, 15);
+    doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
+    doc.save("customers.pdf");
+  };
 
   return (
     <div className="d-flex">
       <AdminSidebar />
-
       <div className="admin-content p-4 w-100">
-        {error && <Alert variant="danger">{error}</Alert>}
+        <h2 className="mb-4">Admin Dashboard</h2>
 
-        <div className="mb-3 d-flex justify-content-between align-items-center">
-          <h2>Admin Dashboard</h2>
-          <Button onClick={fetchData} variant="outline-primary">Refresh</Button>
+        {/* Alerts */}
+        {success && <Alert variant="success" dismissible onClose={() => setSuccess("")}>{success}</Alert>}
+        {error && <Alert variant="danger" dismissible onClose={() => setError("")}>{error}</Alert>}
+
+        {/* STAT CARDS */}
+        <Row className="mb-4">
+          <Col md={4} sm={12} className="mb-3">
+            <Card className="text-center shadow-sm">
+              <Card.Body>
+                <h6>Total Customers</h6>
+                <Badge bg="primary" style={{ fontSize: "1.2rem" }}>{totalCustomers}</Badge>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={4} sm={12} className="mb-3">
+            <Card className="text-center shadow-sm">
+              <Card.Body>
+                <h6>Total Users</h6>
+                <Badge bg="success" style={{ fontSize: "1.2rem" }}>{totalUsers}</Badge>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={4} sm={12} className="mb-3">
+            <Card className="text-center shadow-sm">
+              <Card.Body>
+                <h6>Total Admins</h6>
+                <Badge bg="warning" text="dark" style={{ fontSize: "1.2rem" }}>{totalAdmins}</Badge>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* SEARCH + EXPORT */}
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+          <Form.Control
+            type="text"
+            placeholder="Search customers..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ maxWidth: "300px" }}
+          />
+          <div className="d-flex gap-2">
+            <Button variant="outline-primary" onClick={fetchData}>Refresh</Button>
+            <Button variant="success" onClick={exportExcel}>Excel</Button>
+            <Button variant="danger" onClick={exportPDF}>PDF</Button>
+            <Form.Check 
+              type="checkbox"
+              label="Select All Across Pages"
+              checked={selectAllAcrossPages}
+              onChange={handleSelectAllAcrossPages}
+            />
+          </div>
         </div>
 
+        {/* CUSTOMER TABLE */}
         {loading ? (
-          <div className="text-center my-5">
-            <Spinner animation="border" />
-          </div>
+          <div className="text-center my-5"><Spinner animation="border" /></div>
         ) : (
           <>
-            {/* ---------------- CARDS ---------------- */}
-            <Row className="mb-5">
-              <Col md={4} sm={12}>
-                <Card bg="primary" text="white" className="mb-2">
-                  <Card.Body>
-                    <Card.Title>Total Customers</Card.Title>
-                    <Card.Text style={{ fontSize: "2rem" }}>{customers.length}</Card.Text>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={4} sm={12}>
-                <Card bg="success" text="white" className="mb-2">
-                  <Card.Body>
-                    <Card.Title>Total Users</Card.Title>
-                    <Card.Text style={{ fontSize: "2rem" }}>{totalUsers}</Card.Text>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={4} sm={12}>
-                <Card bg="warning" text="white" className="mb-2">
-                  <Card.Body>
-                    <Card.Title>Total Admins</Card.Title>
-                    <Card.Text style={{ fontSize: "2rem" }}>{totalAdmins}</Card.Text>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
-
-            {/* ---------------- CUSTOMER TABLE ---------------- */}
-            <h2 className="mb-3">Customer List</h2>
             <Table striped bordered hover responsive>
-              <thead>
+              <thead className="table-dark">
                 <tr>
-                  <th>No.</th>
+                  <th>
+                    <Form.Check 
+                      type="checkbox"
+                      checked={currentCustomers.every(c => selectedCustomers.includes(c._id))}
+                      onChange={handleSelectAllPage}
+                    />
+                  </th>
+                  <th>#</th>
                   <th>Sr No</th>
                   <th>Category</th>
                   <th>Customer Name</th>
@@ -124,12 +280,19 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {customers.map((c, i) => (
+                {currentCustomers.map((c, i) => (
                   <tr key={c._id}>
-                    <td>{i + 1}</td>
+                    <td>
+                      <Form.Check 
+                        type="checkbox"
+                        checked={selectedCustomers.includes(c._id)}
+                        onChange={e => handleSelectOne(e, c._id)}
+                      />
+                    </td>
+                    <td>{indexOfFirst + i + 1}</td>
                     <td>{c.srNo}</td>
                     <td>{c.category}</td>
-                    <td>{c.name}</td>
+                    <td>{c.name || c.customername}</td>
                     <td>{c.salesPerson}</td>
                     <td>{c.offices}</td>
                     <td>{c.plants}</td>
@@ -149,6 +312,25 @@ const AdminDashboard = () => {
                 ))}
               </tbody>
             </Table>
+
+            {/* PAGINATION */}
+            <div className="d-flex justify-content-center gap-2 mt-3">
+              <Button
+                variant="outline-primary"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+              >
+                Prev
+              </Button>
+              <span className="align-self-center">{currentPage} / {totalPages}</span>
+              <Button
+                variant="outline-primary"
+                disabled={currentPage === totalPages || totalPages === 0}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+              >
+                Next
+              </Button>
+            </div>
           </>
         )}
       </div>

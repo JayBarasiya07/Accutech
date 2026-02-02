@@ -1,10 +1,10 @@
 /* ==============================
-   Admin Sidebar Base
+   Admin Sidebar
 ============================== */
 .admin-sidebar {
   width: 220px;
   min-height: 100vh;
-  background-color: #1e1e1f; /* main sidebar color */
+  background-color: #1e1e1f;
   color: white;
   padding: 1rem;
   position: fixed;
@@ -15,16 +15,16 @@
   z-index: 1000;
 }
 
-/* Sidebar Header */
 .admin-sidebar .sidebar-header {
   text-align: center;
   font-weight: bold;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
+  letter-spacing: 1px;
+  word-spacing: 2px;
   color: #fff;
   margin-bottom: 1.5rem;
 }
 
-/* Nav Links */
 .admin-sidebar .nav-link {
   color: white;
   margin-bottom: 0.5rem;
@@ -45,33 +45,19 @@
   font-weight: bold;
 }
 
-/* Sidebar responsive toggle */
+/* Sidebar responsive */
 @media (max-width: 992px) {
-  .admin-sidebar {
-    width: 200px;
-    left: -220px;
-  }
-
-  .admin-sidebar.open {
-    left: 0;
-  }
+  .admin-sidebar { width: 200px; left: -220px; }
+  .admin-sidebar.open { left: 0; }
 }
 
-/* Mobile overlay */
 @media (max-width: 576px) {
-  .admin-sidebar {
-    width: 70%;
-    left: -100%;
-    padding: 1rem 1.5rem;
-  }
-
-  .admin-sidebar.open {
-    left: 0;
-  }
+  .admin-sidebar { width: 70%; left: -100%; padding: 1rem 1.5rem; }
+  .admin-sidebar.open { left: 0; }
 }
 
 /* ==============================
-   Main Content Area
+   Main Content
 ============================== */
 .admin-content {
   margin-left: 220px;
@@ -80,13 +66,11 @@
 }
 
 @media (max-width: 992px) {
-  .admin-content {
-    margin-left: 0;
-  }
+  .admin-content { margin-left: 0; }
 }
 
 /* ==============================
-   Dashboard Cards
+   Dashboard Stat Cards
 ============================== */
 .admin-cards .card {
   border-radius: 8px;
@@ -98,8 +82,30 @@
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
+.stat-icon { font-size: 2.5rem; opacity: 0.85; }
+
+/* Gradient backgrounds for cards */
+.stat-card {
+  border-radius: 12px;
+  color: #fff;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.bg-gradient-blue { background: linear-gradient(135deg, #1e3c72, #2a5298); }
+.bg-gradient-green { background: linear-gradient(135deg, #11998e, #38ef7d); }
+.bg-gradient-orange { background: linear-gradient(135deg, #f7971e, #ffd200); }
+
 /* ==============================
-   Customer List Table
+   Customer Table
 ============================== */
 .admin-customer-list {
   padding: 20px;
@@ -107,32 +113,32 @@
   min-height: 100vh;
 }
 
-/* Page heading */
 .admin-customer-list h2 {
   font-weight: 600;
   color: #000208;
   margin-bottom: 20px;
 }
 
-/* Add Button */
 .admin-customer-list .btn-success {
   border-radius: 8px;
   padding: 0.5rem 1rem;
   font-weight: 500;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   transition: all 0.2s ease-in-out;
 }
 
 .admin-customer-list .btn-success:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
-/* Table Styling */
 .admin-customer-list table {
+  width: 100%;
   background-color: #fff;
   border-radius: 8px;
   overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0;
   border: 1px solid #dee2e6;
 }
 
@@ -142,25 +148,34 @@
   vertical-align: middle;
   font-size: 0.9rem;
   padding: 0.6rem 0.75rem;
-  border: 1px solid #dee2e6;
+  border-bottom: 1px solid #dee2e6;
+  border-right: 1px solid #dee2e6; /* border-right added */
   white-space: nowrap;
 }
 
-/* Table Header */
+.admin-customer-list table th:last-child,
+.admin-customer-list table td:last-child {
+  border-right: none; /* remove double border on last column */
+}
+
 .admin-customer-list table thead th {
   background-color: #c3c8d2d4;
-  color: #000000;
+  color: #000;
   font-weight: 700;
-  letter-spacing: 1 px;
 }
 
-/* Table Row Hover */
+.admin-customer-list table tbody tr {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
 .admin-customer-list table tbody tr:hover {
+  transform: scale(1.01);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
   background-color: #e9f2ff;
-  transition: background-color 0.2s ease-in-out;
 }
 
-/* Action Buttons */
 .admin-customer-list .btn-warning,
 .admin-customer-list .btn-danger {
   font-size: 0.8rem;
@@ -182,10 +197,8 @@
   margin: 0 2px;
 }
 
-/* Modal Styling */
-.admin-customer-list .modal-content {
-  border-radius: 10px;
-}
+/* Modal */
+.admin-customer-list .modal-content { border-radius: 10px; }
 
 .admin-customer-list .modal-header {
   background-color: #001d6b;
@@ -199,49 +212,33 @@
   background-color: #f8f9fa;
 }
 
-/* Responsive Table & Buttons */
-@media (max-width: 768px) {
-  .admin-customer-list table th,
-  .admin-customer-list table td {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.5rem;
-  }
-
-  .admin-customer-list .btn-warning,
-  .admin-customer-list .btn-danger {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.4rem;
-  }
+.admin-customer-list .modal-body button {
+  background-color: #2563eb;
+  color: #fff;
+  border: none;
+  transition: all 0.2s ease;
 }
 
-@media (max-width: 576px) {
-  .admin-customer-list table th,
-  .admin-customer-list table td {
-    font-size: 0.7rem;
-    padding: 0.3rem 0.4rem;
-  }
-
-  .admin-customer-list .btn-success {
-    width: 100%;
-  }
+.admin-customer-list .modal-body button:hover {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
 }
 
-
-/* Container padding and background */
+/* ==============================
+   About Page / Cards
+============================== */
 .admin-about {
   padding: 20px;
   min-height: 100vh;
   background-color: #f8f9fa;
 }
 
-/* Page Heading */
 .about-heading {
   font-weight: 700;
   color: #001d6b;
   font-size: 2rem;
 }
 
-/* Card Styling */
 .about-card {
   border-radius: 10px;
   transition: all 0.3s ease-in-out;
@@ -250,10 +247,9 @@
 
 .about-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
 
-/* Card Titles */
 .card-title {
   font-size: 1.3rem;
   font-weight: 600;
@@ -261,104 +257,67 @@
   margin-bottom: 0.5rem;
 }
 
-/* Card Text */
 .card-text {
   font-size: 0.95rem;
   color: #333;
   line-height: 1.5;
 }
 
-/* Responsive adjustments */
+/* ==============================
+   Responsive Adjustments
+============================== */
 @media (max-width: 768px) {
-  .about-heading {
-    font-size: 1.6rem;
-  }
+  .about-heading { font-size: 1.6rem; }
+  .card-title { font-size: 1.1rem; }
+  .card-text { font-size: 0.9rem; }
 
-  .card-title {
-    font-size: 1.1rem;
-  }
+  .admin-customer-list table th,
+  .admin-customer-list table td { font-size: 0.75rem; padding: 0.4rem 0.5rem; }
 
-  .card-text {
-    font-size: 0.9rem;
-  }
+  .admin-customer-list .btn-warning,
+  .admin-customer-list .btn-danger { font-size: 0.7rem; padding: 0.2rem 0.4rem; }
 }
 
 @media (max-width: 576px) {
-  .about-heading {
-    font-size: 1.4rem;
-  }
+  .about-heading { font-size: 1.4rem; }
+  .card-title { font-size: 1rem; }
+  .card-text { font-size: 0.85rem; }
 
-  .card-title {
-    font-size: 1rem;
-  }
+  .admin-customer-list table th,
+  .admin-customer-list table td { font-size: 0.7rem; padding: 0.3rem 0.4rem; }
 
-  .card-text {
-    font-size: 0.85rem;
-  }
+  .admin-customer-list .btn-success { width: 100%; }
 }
 
+/* ==============================
+   Reveal Animations
+============================== */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(30px) scale(0.95);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
 
-/* ---------- Sidebar Styles ---------- */
-.sidebar {
-  width: 220px;
-  height: 100vh;
-  background-color: #1f2937; /* dark gray/blue */
-  color: #f9fafb; /* off-white text */
+.reveal-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Loader */
+.loader-container {
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
 }
 
-.sidebar h2 {
-  font-size: 1.5rem;
-  margin-bottom: 2rem;
+/* Spin animation for refresh icon */
+.spin {
+  animation: spin 1s linear infinite;
 }
 
-.sidebar a {
-  color: #f9fafb;
-  text-decoration: none;
-  margin-bottom: 1rem;
-  padding: 10px;
-  border-radius: 5px;
-  transition: 0.2s;
-}
-
-.sidebar a:hover {
-  background-color: #374151; /* slightly lighter gray */
-}
-
-/* ---------- AdminCategories Page Styles ---------- */
-.admin-container {
-  margin-left: 240px; /* leave space for sidebar */
-  padding: 20px;
-  background-color: #f3f4f6; /* light gray background */
-  min-height: 100vh;
-}
-
-.admin-container h3 {
-  margin-bottom: 20px;
-}
-
-.table thead {
-  background-color: #4b5563; /* gray header */
-  color: #fff;
-}
-
-.table tbody tr:hover {
-  background-color: #e5e7eb; /* light hover effect */
-}
-
-.table td button {
-  margin-right: 5px;
-}
-
-/* Modal Update Button */
-.modal-body button {
-  background-color: #2563eb;
-  color: #fff;
-  border: none;
-}
-
-.modal-body button:hover {
-  background-color: #1d4ed8;
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

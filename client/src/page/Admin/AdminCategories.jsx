@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Form, Modal, Alert } from "react-bootstrap";
+import { Table, Button, Form, Modal, Alert, Spinner } from "react-bootstrap";
 import AdminSidebar from "../../components/Admin/AdminSidebar";
 
 const AdminCategories = () => {
+  const token = localStorage.getItem("token");
   const [categories, setCategories] = useState([]);
   const [coolings, setCoolings] = useState([]);
 
@@ -16,81 +17,122 @@ const AdminCategories = () => {
   const [editCooling, setEditCooling] = useState(null);
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // ---------------- LOAD DATA ----------------
+  const loadData = async () => {
+    if (!token) return window.location.assign("/login");
+
+    try {
+      const [catRes, coolRes] = await Promise.all([
+        fetch("http://localhost:8000/api/categories", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch("http://localhost:8000/api/cooling", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      if (!catRes.ok) throw new Error("Failed to fetch categories");
+      if (!coolRes.ok) throw new Error("Failed to fetch coolings");
+
+      const catData = await catRes.json();
+      const coolData = await coolRes.json();
+
+      setCategories(catData);
+      setCoolings(coolData);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [catRes, coolRes] = await Promise.all([
-          fetch("http://localhost:8000/api/categories"),
-          fetch("http://localhost:8000/api/cooling"),
-        ]);
-
-        if (!catRes.ok || !coolRes.ok) throw new Error("Failed to fetch data");
-
-        const catData = await catRes.json();
-        const coolData = await coolRes.json();
-
-        setCategories(catData);
-        setCoolings(coolData);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load data");
-      }
-    };
-
     loadData();
-  }, []); // ✅ no synchronous setState warning
+  }, []);
 
   // ---------------- CATEGORY CRUD ----------------
   const addCategory = async () => {
     if (!categoryName.trim()) return setError("Category required");
     setError("");
+    setLoading(true);
+
     try {
       const res = await fetch("http://localhost:8000/api/categories", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ name: categoryName }),
       });
-      if (!res.ok) throw new Error("Failed to add category");
-      const newCat = await res.json();
-      setCategories([newCat, ...categories]);
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to add category");
+
+      setCategories([data, ...categories]);
       setCategoryName("");
     } catch (err) {
       console.error(err);
-      setError("Failed to add category");
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateCategory = async () => {
     if (!editCategory?.name.trim()) return setError("Category required");
     setError("");
+    setLoading(true);
+
     try {
       const res = await fetch(
         `http://localhost:8000/api/categories/${editCategory._id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ name: editCategory.name }),
         }
       );
-      const updated = await res.json();
-      setCategories(
-        categories.map((cat) => (cat._id === updated._id ? updated : cat))
-      );
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to update category");
+
+      setCategories(categories.map((c) => (c._id === data._id ? data : c)));
       setShowCategoryModal(false);
+      setEditCategory(null);
     } catch (err) {
       console.error(err);
-      setError("Failed to update category");
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteCategory = async (id) => {
+    setError("");
+    setLoading(true);
+
     try {
-      await fetch(`http://localhost:8000/api/categories/${id}`, { method: "DELETE" });
+      const res = await fetch(`http://localhost:8000/api/categories/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Failed to delete category");
+      }
+
       setCategories(categories.filter((c) => c._id !== id));
-    } catch {
-      setError("Failed to delete category");
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -98,49 +140,84 @@ const AdminCategories = () => {
   const addCooling = async () => {
     if (!coolingName.trim()) return setError("Cooling required");
     setError("");
+    setLoading(true);
+
     try {
       const res = await fetch("http://localhost:8000/api/cooling", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ name: coolingName }),
       });
-      if (!res.ok) throw new Error("Failed to add cooling");
-      const newCool = await res.json();
-      setCoolings([newCool, ...coolings]);
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to add cooling");
+
+      setCoolings([data, ...coolings]);
       setCoolingName("");
-    } catch {
-      setError("Failed to add cooling");
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateCooling = async () => {
     if (!editCooling?.name.trim()) return setError("Cooling required");
     setError("");
+    setLoading(true);
+
     try {
       const res = await fetch(
         `http://localhost:8000/api/cooling/${editCooling._id}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ name: editCooling.name }),
         }
       );
-      const updated = await res.json();
-      setCoolings(
-        coolings.map((c) => (c._id === updated._id ? updated : c))
-      );
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to update cooling");
+
+      setCoolings(coolings.map((c) => (c._id === data._id ? data : c)));
       setShowCoolingModal(false);
-    } catch {
-      setError("Failed to update cooling");
+      setEditCooling(null);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteCooling = async (id) => {
+    setError("");
+    setLoading(true);
+
     try {
-      await fetch(`http://localhost:8000/api/cooling/${id}`, { method: "DELETE" });
+      const res = await fetch(`http://localhost:8000/api/cooling/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Failed to delete cooling");
+      }
+
       setCoolings(coolings.filter((c) => c._id !== id));
-    } catch {
-      setError("Failed to delete cooling");
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -159,10 +236,15 @@ const AdminCategories = () => {
             value={categoryName}
             onChange={(e) => setCategoryName(e.target.value)}
           />
-          <Button onClick={addCategory} className="ms-2 btn-success">
-            Add
+          <Button
+            onClick={addCategory}
+            className="ms-2 btn-success"
+            disabled={loading}
+          >
+            {loading ? <Spinner animation="border" size="sm" /> : "Add"}
           </Button>
         </Form>
+
         <Table striped bordered hover>
           <thead>
             <tr>
@@ -191,6 +273,7 @@ const AdminCategories = () => {
                     size="sm"
                     variant="danger"
                     onClick={() => deleteCategory(c._id)}
+                    disabled={loading}
                   >
                     Delete
                   </Button>
@@ -208,10 +291,15 @@ const AdminCategories = () => {
             value={coolingName}
             onChange={(e) => setCoolingName(e.target.value)}
           />
-          <Button onClick={addCooling} className="ms-2 btn-success">
-            Add
+          <Button
+            onClick={addCooling}
+            className="ms-2 btn-success"
+            disabled={loading}
+          >
+            {loading ? <Spinner animation="border" size="sm" /> : "Add"}
           </Button>
         </Form>
+
         <Table striped bordered hover>
           <thead>
             <tr>
@@ -240,6 +328,7 @@ const AdminCategories = () => {
                     size="sm"
                     variant="danger"
                     onClick={() => deleteCooling(c._id)}
+                    disabled={loading}
                   >
                     Delete
                   </Button>
@@ -266,8 +355,8 @@ const AdminCategories = () => {
             <Button variant="secondary" onClick={() => setShowCategoryModal(false)}>
               Close
             </Button>
-            <Button variant="primary" onClick={updateCategory}>
-              Save
+            <Button variant="primary" onClick={updateCategory} disabled={loading}>
+              {loading ? <Spinner animation="border" size="sm" /> : "Save"}
             </Button>
           </Modal.Footer>
         </Modal>
@@ -288,8 +377,8 @@ const AdminCategories = () => {
             <Button variant="secondary" onClick={() => setShowCoolingModal(false)}>
               Close
             </Button>
-            <Button variant="primary" onClick={updateCooling}>
-              Save
+            <Button variant="primary" onClick={updateCooling} disabled={loading}>
+              {loading ? <Spinner animation="border" size="sm" /> : "Save"}
             </Button>
           </Modal.Footer>
         </Modal>

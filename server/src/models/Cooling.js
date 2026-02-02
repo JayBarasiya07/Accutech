@@ -5,7 +5,7 @@ const coolingSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true, // prevent duplicate categories
+      unique: true,
       trim: true,
     },
   },
@@ -13,5 +13,4 @@ const coolingSchema = new mongoose.Schema(
 );
 
 const Cooling = mongoose.model("Cooling", coolingSchema);
-
 export default Cooling;

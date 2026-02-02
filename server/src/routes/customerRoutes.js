@@ -1,23 +1,17 @@
 import express from "express";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import {
-  getCustomers,
-  getCustomerById,
-  createCustomer,
-  updateCustomer,
-  deleteCustomer,
-} from "../controllers/customerController.js";
+import Customer from "../models/Customer.js";
+import { verifyToken, isAdminOrSuper } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// Protect routes
-router.use(authMiddleware);
-
-// Routes
-router.get("/", getCustomers);               // get all customers
-router.get("/:id", getCustomerById);        // get single customer
-router.post("/", createCustomer);           // create customer
-router.put("/:id", updateCustomer);         // update customer
-router.delete("/:id", deleteCustomer);      // delete customer
+// Admin + SuperAdmin
+router.get("/", verifyToken, isAdminOrSuper, async (req, res) => {
+  try {
+    const customers = await Customer.find();
+    res.json(customers);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 export default router;

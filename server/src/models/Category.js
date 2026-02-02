@@ -5,7 +5,7 @@ const categorySchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      unique: true, // prevent duplicate categories
+      unique: true, // prevent duplicates
       trim: true,
     },
   },
@@ -13,5 +13,4 @@ const categorySchema = new mongoose.Schema(
 );
 
 const Category = mongoose.model("Category", categorySchema);
-
 export default Category;

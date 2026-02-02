@@ -1,55 +1,197 @@
-/* SuperAdminSidebar.css */
+/* ============================================ */
+/*             SuperAdmin Sidebar CSS           */
+/* ============================================ */
 
+/* --- Base Styles (Desktop & General) --- */
 .superadmin-sidebar {
-  width: 250px;
-  background-color: #474343;
-  border-right: 1px solid #ffffff;
-  padding: 20px;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #1a1d20;
+  color: #ffffff;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  overflow: hidden;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: slideInLeft 0.5s ease-out;
+}
+
+/* --- Brand Section --- */
+.sidebar-brand {
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.brand-logo {
+  background: linear-gradient(135deg, #0d6efd 0%, #0043a8 100%);
+  color: #ffffff;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(13, 110, 253, 0.3);
+  animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.brand-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  animation: fadeIn 0.8s ease-in;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Navigation Links --- */
+.sidebar-content {
+  padding: 1.5rem 0;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.sidebar-item {
+  margin: 6px 14px !important;
+  padding: 12px 16px !important;
+  border-radius: 10px !important;
+  color: #adb5bd !important;
+  display: flex;
+  align-items: center;
+  text-decoration: none !important;
+  position: relative;
+  opacity: 0; 
+  animation: staggerFadeIn 0.4s forwards;
+  cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.superadmin-sidebar h5 {
-  font-weight: bold;
-  margin-bottom: 15px;
+/* Staggered fade-in for nav items */
+.sidebar-item:nth-child(1) { animation-delay: 0.1s; }
+.sidebar-item:nth-child(2) { animation-delay: 0.2s; }
+.sidebar-item:nth-child(3) { animation-delay: 0.3s; }
+.sidebar-item:nth-child(4) { animation-delay: 0.4s; }
+
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  transform: translateX(8px);
 }
 
-.superadmin-sidebar hr {
-  margin: 10px 0;
-  border-top: 5px solid #3103ff;
+.sidebar-item svg {
+  margin-right: 8px;
+  transition: transform 0.3s ease;
 }
 
-.superadmin-sidebar p {
-  font-size: 1.2rem;
-  margin: 10px 0;
-  color: #fffcfc;
+.sidebar-item:hover svg {
+  transform: translateX(2px);
 }
 
-.superadmin-sidebar .nav-link {
-  color: #ffffff;
-  padding: 8px 10px;
-  border-radius: 4px;
-  margin-bottom: 5px;
-  transition: background 0.2s, color 0.2s;
+.active-link {
+  background: #0d6efd !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
 }
 
-.superadmin-sidebar .nav-link:hover {
-  background-color: #e6e7e9;
-  color: #fff;
-  text-decoration: none;
+.active-link::before {
+  content: '';
+  position: absolute;
+  left: -14px;
+  height: 20px;
+  width: 4px;
+  background: #ffffff;
+  border-radius: 0 4px 4px 0;
 }
 
-@media (max-width: 768px) {
+/* --- Footer / Logout --- */
+.sidebar-footer {
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.logout-button {
+  padding: 12px 16px !important;
+  border-radius: 10px !important;
+  color: #ff6b6b !important;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+  background: rgba(220, 53, 69, 0.15) !important;
+  color: #ff5252 !important;
+  gap: 15px;
+}
+
+/* --- Scrollbar Styling --- */
+.sidebar-content::-webkit-scrollbar { width: 4px; }
+.sidebar-content::-webkit-scrollbar-track { background: transparent; }
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+/* ============================================ */
+/*                  Animations                  */
+/* ============================================ */
+@keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes staggerFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ============================================ */
+/*               Responsive Design              */
+/* ============================================ */
+
+/* 📱 Extra Small Devices (<576px) */
+@media (max-width: 575.98px) {
+  .brand-logo { width: 36px; height: 36px; font-size: 1rem; }
+  .brand-text { font-size: 1.05rem; }
+  .sidebar-item { padding: 14px 16px !important; margin: 6px 10px !important; font-size: 0.95rem; }
+}
+
+/* 📲 Small & Medium Devices (<768px) - Offcanvas */
+@media (max-width: 767.98px) {
   .superadmin-sidebar {
-    width: 100%;
-    min-height: auto;
-    flex-direction: row;
-    overflow-x: auto;
+    position: relative;
+    height: 100%;
+    min-height: 100vh;
+    border-right: none;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    animation: none; /* disable entrance to prevent flicker */
   }
 
-  .superadmin-sidebar .nav-link {
-    margin-right: 10px;
-  }
+  .superadmin-sidebar.show { transform: translateX(0); }
+  .sidebar-brand { padding: 1rem 1.25rem; gap: 10px; }
+}
+
+/* 💻 Medium Devices (768px ≤ width < 992px) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .superadmin-sidebar { width: 220px; position: fixed; }
+}
+
+/* 🖥️ Large Devices (992px ≤ width < 1200px) */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  .superadmin-sidebar { width: 250px; }
+}
+
+/* 🖥️ Extra Large Devices (≥1200px) */
+@media (min-width: 1200px) {
+  .superadmin-sidebar { width: 280px; }
+  .sidebar-item { margin: 6px 16px !important; }
 }

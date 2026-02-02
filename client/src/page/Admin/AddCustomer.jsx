@@ -7,12 +7,13 @@ import AdminSidebar from "../../components/Admin/AdminSidebar";
 const AddCustomer = () => {
   const navigate = useNavigate();
   const { id } = useParams(); // Editing ID if any
-  const token = localStorage.getItem("admin_token"); // Use role-specific token
+  const token = localStorage.getItem("token"); // Use the main login token
 
   const [categories, setCategories] = useState([]);
   const [coolings, setCoolings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generalError, setGeneralError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [errors, setErrors] = useState({});
 
   const [customer, setCustomer] = useState({
@@ -39,6 +40,8 @@ const AddCustomer = () => {
   // ---------------------- FETCH CATEGORIES, COOLING & CUSTOMER ----------------------
   useEffect(() => {
     const fetchData = async () => {
+      if (!token) return navigate("/login"); // redirect if no token
+
       try {
         const [catRes, coolRes] = await Promise.all([
           axios.get("http://localhost:8000/api/categories", {
@@ -61,14 +64,20 @@ const AddCustomer = () => {
         }
       } catch (err) {
         console.error(err);
-        setGeneralError("Failed to load data. Please try again.");
+        if (err.response?.status === 401) {
+          // token invalid
+          setGeneralError("Invalid or expired token. Redirecting to login...");
+          setTimeout(() => navigate("/login"), 2000);
+        } else {
+          setGeneralError("Failed to load data. Please try again.");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [id, token]);
+  }, [id, token, navigate]);
 
   // ---------------------- HANDLE CHANGE ----------------------
   const handleChange = (e) => {
@@ -120,6 +129,7 @@ const AddCustomer = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setGeneralError("");
+    setSuccessMsg("");
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -127,27 +137,47 @@ const AddCustomer = () => {
     }
 
     try {
+      const headers = { Authorization: `Bearer ${token}` };
+
       if (id) {
-        await axios.put(
-          `http://localhost:8000/api/customers/${id}`,
-          customer,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        alert("Customer updated successfully!");
+        await axios.put(`http://localhost:8000/api/customers/${id}`, customer, { headers });
+        setSuccessMsg("Customer updated successfully ✅");
       } else {
-        await axios.post(
-          "http://localhost:8000/api/customers",
-          customer,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        alert("Customer added successfully!");
+        await axios.post("http://localhost:8000/api/customers", customer, { headers });
+        setSuccessMsg("Customer added successfully ✅");
+        setCustomer({
+          srNo: "",
+          category: "",
+          customername: "",
+          salesPerson: "",
+          offices: "",
+          plants: "",
+          location: "",
+          contactPerson: "",
+          department: "",
+          designation: "",
+          mobile: "",
+          email: "",
+          decision: "",
+          currentUPS: "",
+          scopeSRC: "",
+          racks: "",
+          cooling: "",
+          roomAge: "",
+        });
       }
-      navigate("/admin/customers");
+
+      setTimeout(() => navigate("/admin/customers"), 1500);
     } catch (err) {
       console.error(err);
-      setGeneralError(
-        err.response?.data?.message || "Failed to save customer. Please try again."
-      );
+      if (err.response?.status === 401) {
+        setGeneralError("Invalid or expired token. Redirecting to login...");
+        setTimeout(() => navigate("/login"), 2000);
+      } else {
+        setGeneralError(
+          err.response?.data?.message || "Failed to save customer. Please try again."
+        );
+      }
     }
   };
 
@@ -170,8 +200,10 @@ const AddCustomer = () => {
         </Button>
 
         {generalError && <Alert variant="danger">{generalError}</Alert>}
+        {successMsg && <Alert variant="success">{successMsg}</Alert>}
 
         <Form onSubmit={handleSubmit}>
+          {/* Row 1 */}
           <Row className="mb-3">
             <Col md={3}>
               <Form.Label>SrNo</Form.Label>

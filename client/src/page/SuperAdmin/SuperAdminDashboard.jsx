@@ -9,9 +9,14 @@ const SuperAdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [updatingUserId, setUpdatingUserId] = useState(null); // disable buttons during update
   const token = localStorage.getItem("token");
 
+  // Fetch all users
   const fetchUsers = async () => {
+    setLoading(true);
+    setError("");
     try {
       const res = await fetch("http://localhost:8000/api/users", {
         headers: { Authorization: `Bearer ${token}` },
@@ -20,34 +25,64 @@ const SuperAdminDashboard = () => {
       const data = await res.json();
       setUsers(data);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Something went wrong ❌");
+      setTimeout(() => setError(""), 4000);
     } finally {
       setLoading(false);
     }
   };
 
+  // Delete user
   const deleteUser = async (id) => {
     if (!window.confirm("Delete this user?")) return;
-    await fetch(`http://localhost:8000/api/users/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    fetchUsers();
+    setUpdatingUserId(id);
+    try {
+      const res = await fetch(`http://localhost:8000/api/users/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to delete user");
+      setSuccess("User deleted successfully ✅");
+      fetchUsers();
+      setTimeout(() => setSuccess(""), 4000);
+    } catch (err) {
+      setError(err.message || "Delete failed ❌");
+      setTimeout(() => setError(""), 4000);
+    } finally {
+      setUpdatingUserId(null);
+    }
   };
 
+  // Update user role
   const updateUser = async (id, role) => {
-    await fetch(`http://localhost:8000/api/users/${id}/role`, {
-      method: "PUT",
-      headers: { 
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}` 
-      },
-      body: JSON.stringify({ role }),
-    });
-    fetchUsers();
+    setUpdatingUserId(id);
+    try {
+      const res = await fetch(`http://localhost:8000/api/users/${id}/role`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Failed to update role");
+      }
+      setSuccess(`Role updated to ${role.toUpperCase()} ✅`);
+      fetchUsers();
+      setTimeout(() => setSuccess(""), 4000);
+    } catch (err) {
+      setError(err.message || "Role update failed ❌");
+      setTimeout(() => setError(""), 4000);
+    } finally {
+      setUpdatingUserId(null);
+    }
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const totalUsers = users.filter(u => u.role === "user").length;
   const totalAdmins = users.filter(u => u.role === "admin").length;
@@ -56,6 +91,10 @@ const SuperAdminDashboard = () => {
   return (
     <SuperAdminLayout>
       <h2 className="mb-4">SuperAdmin Dashboard</h2>
+
+      {/* Alerts */}
+      {success && <Alert variant="success" dismissible onClose={() => setSuccess("")}>{success}</Alert>}
+      {error && <Alert variant="danger" dismissible onClose={() => setError("")}>{error}</Alert>}
 
       {/* STAT CARDS */}
       <Row className="mb-4">
@@ -68,7 +107,6 @@ const SuperAdminDashboard = () => {
             </Card.Body>
           </Card>
         </Col>
-
         <Col md={4}>
           <Card className="text-center shadow-sm">
             <Card.Body>
@@ -78,7 +116,6 @@ const SuperAdminDashboard = () => {
             </Card.Body>
           </Card>
         </Col>
-
         <Col md={4}>
           <Card className="text-center shadow-sm">
             <Card.Body>
@@ -90,12 +127,11 @@ const SuperAdminDashboard = () => {
         </Col>
       </Row>
 
-      {error && <Alert variant="danger">{error}</Alert>}
-
+      {/* USERS TABLE */}
       {loading ? (
-        <Spinner animation="border" />
+        <div className="text-center my-5"><Spinner animation="border" /></div>
       ) : (
-        <Table striped bordered hover>
+        <Table striped bordered hover responsive>
           <thead className="table-dark">
             <tr>
               <th>#</th>
@@ -130,6 +166,7 @@ const SuperAdminDashboard = () => {
                     variant="success"
                     size="sm"
                     onClick={() => updateUser(user._id, user.role)}
+                    disabled={updatingUserId === user._id}
                   >
                     <FaEdit /> Update
                   </Button>
@@ -137,6 +174,7 @@ const SuperAdminDashboard = () => {
                     variant="danger"
                     size="sm"
                     onClick={() => deleteUser(user._id)}
+                    disabled={updatingUserId === user._id}
                   >
                     <FaTrash /> Delete
                   </Button>

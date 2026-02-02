@@ -1,15 +1,11 @@
-// routes/category.js
 import express from "express";
 import Category from "../models/Category.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-import { isAdmin, isSuperAdmin } from "../middlewares/authMiddleware.js";
-
-
+import authMiddleware, { isAdmin } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 // GET all categories
-router.get("/", async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
     const categories = await Category.find().sort({ createdAt: -1 });
     res.json(categories);
@@ -19,33 +15,31 @@ router.get("/", async (req, res) => {
 });
 
 // POST new category
-router.post("/", async (req, res) => {
-  const { category, cooling } = req.body;
-  if (!category || !cooling)
-    return res.status(400).json({ error: "Category and Cooling are required" });
+router.post("/", authMiddleware, isAdmin, async (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: "Category name is required" });
 
   try {
-    const existing = await Category.findOne({ category });
-    if (existing) return res.status(400).json({ error: "Category already exists" });
+    const exists = await Category.findOne({ name });
+    if (exists) return res.status(400).json({ error: "Category already exists" });
 
-    const newCat = new Category({ category, cooling });
-    await newCat.save();
-    res.status(201).json(newCat);
+    const newCategory = new Category({ name });
+    await newCategory.save();
+    res.status(201).json(newCategory);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // PUT update category
-router.put("/:id", async (req, res) => {
-  const { category, cooling } = req.body;
-  if (!category || !cooling)
-    return res.status(400).json({ error: "Category and Cooling are required" });
+router.put("/:id", authMiddleware, isAdmin, async (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: "Category name is required" });
 
   try {
     const updated = await Category.findByIdAndUpdate(
       req.params.id,
-      { category, cooling },
+      { name },
       { new: true, runValidators: true }
     );
     if (!updated) return res.status(404).json({ error: "Category not found" });
@@ -56,7 +50,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE category
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authMiddleware, isAdmin, async (req, res) => {
   try {
     const deleted = await Category.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: "Category not found" });

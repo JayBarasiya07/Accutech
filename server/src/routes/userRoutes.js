@@ -1,11 +1,12 @@
 import express from "express";
-import { verifyToken, isSuperAdmin } from "../middlewares/authMiddleware.js";
+import { verifyToken, isAdminOrSuper, isSuperAdmin } from "../middlewares/authMiddleware.js";
 import User from "../models/User.js";
 
 const router = express.Router();
 
-// Get all users (SuperAdmin only)
-router.get("/", verifyToken, isSuperAdmin, async (req, res) => {
+// ================= GET ALL USERS =================
+// Admin + SuperAdmin
+router.get("/", verifyToken, isAdminOrSuper, async (req, res) => {
   try {
     const users = await User.find().select("-password");
     res.json(users);
@@ -14,9 +15,11 @@ router.get("/", verifyToken, isSuperAdmin, async (req, res) => {
   }
 });
 
-// Update role (SuperAdmin only)
+// ================= UPDATE ROLE =================
+// SuperAdmin only
 router.put("/:id/role", verifyToken, isSuperAdmin, async (req, res) => {
   const { role } = req.body;
+
   if (!["user", "admin", "superadmin"].includes(role)) {
     return res.status(400).json({ message: "Invalid role" });
   }
@@ -34,7 +37,8 @@ router.put("/:id/role", verifyToken, isSuperAdmin, async (req, res) => {
   }
 });
 
-// Delete user (SuperAdmin only)
+// ================= DELETE USER =================
+// SuperAdmin only
 router.delete("/:id", verifyToken, isSuperAdmin, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);

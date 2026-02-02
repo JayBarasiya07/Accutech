@@ -1,10 +1,11 @@
 import express from "express";
 import Cooling from "../models/Cooling.js";
+import authMiddleware, { isAdmin } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// GET all
-router.get("/", async (req, res) => {
+// GET all coolings
+router.get("/", authMiddleware, async (req, res) => {
   try {
     const coolings = await Cooling.find().sort({ createdAt: -1 });
     res.json(coolings);
@@ -13,27 +14,27 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST
-router.post("/", async (req, res) => {
+// POST new cooling
+router.post("/", authMiddleware, isAdmin, async (req, res) => {
   const { name } = req.body;
-  if (!name) return res.status(400).json({ error: "Cooling required" });
+  if (!name) return res.status(400).json({ error: "Cooling name is required" });
 
   try {
-    const existing = await Cooling.findOne({ name });
-    if (existing) return res.status(400).json({ error: "Cooling exists" });
+    const exists = await Cooling.findOne({ name });
+    if (exists) return res.status(400).json({ error: "Cooling already exists" });
 
-    const newCool = new Cooling({ name });
-    await newCool.save();
-    res.status(201).json(newCool);
+    const newCooling = new Cooling({ name });
+    await newCooling.save();
+    res.status(201).json(newCooling);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// PUT
-router.put("/:id", async (req, res) => {
+// PUT update cooling
+router.put("/:id", authMiddleware, isAdmin, async (req, res) => {
   const { name } = req.body;
-  if (!name) return res.status(400).json({ error: "Cooling required" });
+  if (!name) return res.status(400).json({ error: "Cooling name is required" });
 
   try {
     const updated = await Cooling.findByIdAndUpdate(
@@ -48,8 +49,8 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// DELETE
-router.delete("/:id", async (req, res) => {
+// DELETE cooling
+router.delete("/:id", authMiddleware, isAdmin, async (req, res) => {
   try {
     const deleted = await Cooling.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: "Cooling not found" });

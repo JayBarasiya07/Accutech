@@ -36,6 +36,7 @@ import SuperAdminHeader from "./components/SuperAdmin/SuperAdminHeader";
 import SuperAdminSidebar from "./components/SuperAdmin/SuperAdminSidebar";
 import SuperAdminDashboard from "./page/SuperAdmin/SuperAdminDashboard";
 import SuperAdminUsers from "./page/SuperAdmin/SuperAdminUsers";
+import SuperAdminCustomerList from "./page/SuperAdmin/SuperAdminCustomerList";
 
 // ---------------- LAYOUTS ----------------
 
@@ -100,6 +101,8 @@ const App = () => (
       {/* ---------------- SUPER ADMIN ROUTES ---------------- */}
       <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
       <Route path="/superadmin/users" element={<SuperAdminUsers />} />
+      <Route path="/superadmin/customers" element={<SuperAdminCustomerList />} />
+      
       {/* Add more SuperAdmin routes here as needed */}
     </Routes>
   </Router>
