@@ -1,59 +1,93 @@
-// server/src/controllers/customerController.js
 import Customer from "../models/customerModel.js";
 
-// Get all customers
+// GET all customers
 export const getCustomers = async (req, res) => {
   try {
-    const customers = await Customer.find();
-    res.json(customers);
+    const customers = await Customer.find().sort({ createdAt: -1 });
+    res.status(200).json(customers); // ✅ always array
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: "Failed to fetch customers",
+      error: err.message,
+    });
   }
 };
 
-// Get single customer by ID
+// GET customer by ID
 export const getCustomerById = async (req, res) => {
   try {
     const customer = await Customer.findById(req.params.id);
-    if (!customer) return res.status(404).json({ message: "Customer not found" });
-    res.json(customer);
+
+    if (!customer) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    res.status(200).json(customer);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: "Failed to fetch customer",
+      error: err.message,
+    });
   }
 };
 
-// Create a new customer
+// CREATE customer
 export const createCustomer = async (req, res) => {
   try {
     const customer = new Customer(req.body);
-    const savedCustomer = await customer.save();
-    res.status(201).json(savedCustomer);
+    await customer.save();
+
+    res.status(201).json({
+      message: "Customer created successfully",
+      customer,
+    });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(500).json({
+      message: "Failed to create customer",
+      error: err.message,
+    });
   }
 };
 
-// Update a customer
+// UPDATE customer
 export const updateCustomer = async (req, res) => {
   try {
-    const updatedCustomer = await Customer.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
+    const updated = await Customer.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    res.status(200).json({
+      message: "Customer updated successfully",
+      updated,
     });
-    if (!updatedCustomer) return res.status(404).json({ message: "Customer not found" });
-    res.json(updatedCustomer);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(500).json({
+      message: "Failed to update customer",
+      error: err.message,
+    });
   }
 };
 
-// Delete a customer
+// DELETE customer
 export const deleteCustomer = async (req, res) => {
   try {
-    const customer = await Customer.findByIdAndDelete(req.params.id);
-    if (!customer) return res.status(404).json({ message: "Customer not found" });
-    res.json({ message: "Customer deleted successfully" });
+    const deleted = await Customer.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    res.status(200).json({ message: "Customer deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: "Failed to delete customer",
+      error: err.message,
+    });
   }
 };

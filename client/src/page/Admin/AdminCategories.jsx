@@ -17,7 +17,8 @@ const AdminCategories = () => {
   const [editCooling, setEditCooling] = useState(null);
 
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [coolingLoading, setCoolingLoading] = useState(false);
 
   // ---------------- LOAD DATA ----------------
   const loadData = async () => {
@@ -55,7 +56,7 @@ const AdminCategories = () => {
   const addCategory = async () => {
     if (!categoryName.trim()) return setError("Category required");
     setError("");
-    setLoading(true);
+    setCategoryLoading(true);
 
     try {
       const res = await fetch("http://localhost:8000/api/categories", {
@@ -64,7 +65,7 @@ const AdminCategories = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name: categoryName }),
+        body: JSON.stringify({ name: categoryName.trim() }),
       });
 
       const data = await res.json();
@@ -76,14 +77,14 @@ const AdminCategories = () => {
       console.error(err);
       setError(err.message);
     } finally {
-      setLoading(false);
+      setCategoryLoading(false);
     }
   };
 
   const updateCategory = async () => {
     if (!editCategory?.name.trim()) return setError("Category required");
     setError("");
-    setLoading(true);
+    setCategoryLoading(true);
 
     try {
       const res = await fetch(
@@ -94,7 +95,7 @@ const AdminCategories = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ name: editCategory.name }),
+          body: JSON.stringify({ name: editCategory.name.trim() }),
         }
       );
 
@@ -108,13 +109,13 @@ const AdminCategories = () => {
       console.error(err);
       setError(err.message);
     } finally {
-      setLoading(false);
+      setCategoryLoading(false);
     }
   };
 
   const deleteCategory = async (id) => {
     setError("");
-    setLoading(true);
+    setCategoryLoading(true);
 
     try {
       const res = await fetch(`http://localhost:8000/api/categories/${id}`, {
@@ -132,7 +133,7 @@ const AdminCategories = () => {
       console.error(err);
       setError(err.message);
     } finally {
-      setLoading(false);
+      setCategoryLoading(false);
     }
   };
 
@@ -140,7 +141,7 @@ const AdminCategories = () => {
   const addCooling = async () => {
     if (!coolingName.trim()) return setError("Cooling required");
     setError("");
-    setLoading(true);
+    setCoolingLoading(true);
 
     try {
       const res = await fetch("http://localhost:8000/api/cooling", {
@@ -149,7 +150,7 @@ const AdminCategories = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name: coolingName }),
+        body: JSON.stringify({ name: coolingName.trim() }),
       });
 
       const data = await res.json();
@@ -161,14 +162,14 @@ const AdminCategories = () => {
       console.error(err);
       setError(err.message);
     } finally {
-      setLoading(false);
+      setCoolingLoading(false);
     }
   };
 
   const updateCooling = async () => {
     if (!editCooling?.name.trim()) return setError("Cooling required");
     setError("");
-    setLoading(true);
+    setCoolingLoading(true);
 
     try {
       const res = await fetch(
@@ -179,7 +180,7 @@ const AdminCategories = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ name: editCooling.name }),
+          body: JSON.stringify({ name: editCooling.name.trim() }),
         }
       );
 
@@ -193,13 +194,13 @@ const AdminCategories = () => {
       console.error(err);
       setError(err.message);
     } finally {
-      setLoading(false);
+      setCoolingLoading(false);
     }
   };
 
   const deleteCooling = async (id) => {
     setError("");
-    setLoading(true);
+    setCoolingLoading(true);
 
     try {
       const res = await fetch(`http://localhost:8000/api/cooling/${id}`, {
@@ -217,7 +218,7 @@ const AdminCategories = () => {
       console.error(err);
       setError(err.message);
     } finally {
-      setLoading(false);
+      setCoolingLoading(false);
     }
   };
 
@@ -239,9 +240,9 @@ const AdminCategories = () => {
           <Button
             onClick={addCategory}
             className="ms-2 btn-success"
-            disabled={loading}
+            disabled={categoryLoading}
           >
-            {loading ? <Spinner animation="border" size="sm" /> : "Add"}
+            {categoryLoading ? <Spinner animation="border" size="sm" /> : "Add"}
           </Button>
         </Form>
 
@@ -273,7 +274,7 @@ const AdminCategories = () => {
                     size="sm"
                     variant="danger"
                     onClick={() => deleteCategory(c._id)}
-                    disabled={loading}
+                    disabled={categoryLoading}
                   >
                     Delete
                   </Button>
@@ -294,9 +295,9 @@ const AdminCategories = () => {
           <Button
             onClick={addCooling}
             className="ms-2 btn-success"
-            disabled={loading}
+            disabled={coolingLoading}
           >
-            {loading ? <Spinner animation="border" size="sm" /> : "Add"}
+            {coolingLoading ? <Spinner animation="border" size="sm" /> : "Add"}
           </Button>
         </Form>
 
@@ -328,7 +329,7 @@ const AdminCategories = () => {
                     size="sm"
                     variant="danger"
                     onClick={() => deleteCooling(c._id)}
-                    disabled={loading}
+                    disabled={coolingLoading}
                   >
                     Delete
                   </Button>
@@ -338,8 +339,11 @@ const AdminCategories = () => {
           </tbody>
         </Table>
 
-        {/* MODALS */}
-        <Modal show={showCategoryModal} onHide={() => setShowCategoryModal(false)}>
+        {/* CATEGORY MODAL */}
+        <Modal
+          show={showCategoryModal}
+          onHide={() => setShowCategoryModal(false)}
+        >
           <Modal.Header closeButton>
             <Modal.Title>Edit Category</Modal.Title>
           </Modal.Header>
@@ -352,16 +356,27 @@ const AdminCategories = () => {
             />
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowCategoryModal(false)}>
+            <Button
+              variant="secondary"
+              onClick={() => setShowCategoryModal(false)}
+            >
               Close
             </Button>
-            <Button variant="primary" onClick={updateCategory} disabled={loading}>
-              {loading ? <Spinner animation="border" size="sm" /> : "Save"}
+            <Button
+              variant="primary"
+              onClick={updateCategory}
+              disabled={categoryLoading}
+            >
+              {categoryLoading ? <Spinner animation="border" size="sm" /> : "Save"}
             </Button>
           </Modal.Footer>
         </Modal>
 
-        <Modal show={showCoolingModal} onHide={() => setShowCoolingModal(false)}>
+        {/* COOLING MODAL */}
+        <Modal
+          show={showCoolingModal}
+          onHide={() => setShowCoolingModal(false)}
+        >
           <Modal.Header closeButton>
             <Modal.Title>Edit Cooling Type</Modal.Title>
           </Modal.Header>
@@ -374,11 +389,18 @@ const AdminCategories = () => {
             />
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowCoolingModal(false)}>
+            <Button
+              variant="secondary"
+              onClick={() => setShowCoolingModal(false)}
+            >
               Close
             </Button>
-            <Button variant="primary" onClick={updateCooling} disabled={loading}>
-              {loading ? <Spinner animation="border" size="sm" /> : "Save"}
+            <Button
+              variant="primary"
+              onClick={updateCooling}
+              disabled={coolingLoading}
+            >
+              {coolingLoading ? <Spinner animation="border" size="sm" /> : "Save"}
             </Button>
           </Modal.Footer>
         </Modal>

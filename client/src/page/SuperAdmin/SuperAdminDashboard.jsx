@@ -1,189 +1,287 @@
-import React, { useEffect, useState } from "react";
-import { Table, Button, Spinner, Alert, Form, Card, Row, Col, Badge } from "react-bootstrap";
-import { FaUsers, FaUserShield, FaCrown, FaTrash, FaEdit } from "react-icons/fa";
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  Table,
+  Button,
+  Spinner,
+  Alert,
+  Form,
+  Card,
+  Row,
+  Col,
+  Badge,
+  InputGroup,
+  Pagination,
+  OverlayTrigger,
+  Tooltip,
+} from "react-bootstrap";
+import {
+  FaUsers,
+  FaUserShield,
+  FaCrown,
+  FaTrash,
+  FaSearch,
+} from "react-icons/fa";
 import SuperAdminLayout from "../../components/SuperAdmin/SuperAdminLayout";
 
-const roles = ["user", "admin", "superadmin"];
+const ROLES = ["user", "admin"]; // 🚫 superadmin removed from UI
+const API_BASE = "http://localhost:8000/api/users";
 
 const SuperAdminDashboard = () => {
   const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [updatingUserId, setUpdatingUserId] = useState(null); // disable buttons during update
+  const [status, setStatus] = useState({ type: "", msg: "" });
+  const [updatingUserId, setUpdatingUserId] = useState(null);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 5;
+
   const token = localStorage.getItem("token");
 
-  // Fetch all users
-  const fetchUsers = async () => {
+  const showAlert = (msg, type = "success") => {
+    setStatus({ msg, type });
+    setTimeout(() => setStatus({ msg: "", type: "" }), 4000);
+  };
+
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
-      const res = await fetch("http://localhost:8000/api/users", {
+      const res = await fetch(API_BASE, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch users");
       const data = await res.json();
       setUsers(data);
     } catch (err) {
-      setError(err.message || "Something went wrong ❌");
-      setTimeout(() => setError(""), 4000);
+      showAlert(err.message || "Something went wrong ❌", "danger");
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  // Delete user
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
   const deleteUser = async (id) => {
-    if (!window.confirm("Delete this user?")) return;
+    if (!window.confirm("Are you sure? This action cannot be undone.")) return;
     setUpdatingUserId(id);
     try {
-      const res = await fetch(`http://localhost:8000/api/users/${id}`, {
+      const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to delete user");
-      setSuccess("User deleted successfully ✅");
-      fetchUsers();
-      setTimeout(() => setSuccess(""), 4000);
+      showAlert("User deleted successfully ✅");
+      setUsers((prev) => prev.filter((u) => u._id !== id));
     } catch (err) {
-      setError(err.message || "Delete failed ❌");
-      setTimeout(() => setError(""), 4000);
+      showAlert(err.message, "danger");
     } finally {
       setUpdatingUserId(null);
     }
   };
 
-  // Update user role
-  const updateUser = async (id, role) => {
+  const updateUserRole = async (id, newRole) => {
     setUpdatingUserId(id);
     try {
-      const res = await fetch(`http://localhost:8000/api/users/${id}/role`, {
+      const res = await fetch(`${API_BASE}/${id}/role`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ role }),
+        body: JSON.stringify({ role: newRole }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Failed to update role");
-      }
-      setSuccess(`Role updated to ${role.toUpperCase()} ✅`);
-      fetchUsers();
-      setTimeout(() => setSuccess(""), 4000);
+      if (!res.ok) throw new Error("Failed to update role");
+      showAlert(`Role updated to ${newRole.toUpperCase()} ✅`);
+      setUsers((prev) =>
+        prev.map((u) => (u._id === id ? { ...u, role: newRole } : u))
+      );
     } catch (err) {
-      setError(err.message || "Role update failed ❌");
-      setTimeout(() => setError(""), 4000);
+      showAlert(err.message, "danger");
     } finally {
       setUpdatingUserId(null);
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  // Search + Pagination
+  const filteredUsers = users.filter(
+    (u) =>
+      u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const totalUsers = users.filter(u => u.role === "user").length;
-  const totalAdmins = users.filter(u => u.role === "admin").length;
-  const totalSuperAdmins = users.filter(u => u.role === "superadmin").length;
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(
+    indexOfFirstUser,
+    indexOfLastUser
+  );
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+  const stats = {
+    user: users.filter((u) => u.role === "user").length,
+    admin: users.filter((u) => u.role === "admin").length,
+    superadmin: users.filter((u) => u.role === "superadmin").length,
+  };
 
   return (
     <SuperAdminLayout>
-      <h2 className="mb-4">SuperAdmin Dashboard</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>SuperAdmin Dashboard</h2>
+        <Button variant="outline-primary" onClick={fetchUsers} disabled={loading}>
+          Refresh
+        </Button>
+      </div>
 
-      {/* Alerts */}
-      {success && <Alert variant="success" dismissible onClose={() => setSuccess("")}>{success}</Alert>}
-      {error && <Alert variant="danger" dismissible onClose={() => setError("")}>{error}</Alert>}
+      {status.msg && (
+        <Alert variant={status.type} dismissible>
+          {status.msg}
+        </Alert>
+      )}
 
-      {/* STAT CARDS */}
+      {/* STATS */}
       <Row className="mb-4">
-        <Col md={4}>
-          <Card className="text-center shadow-sm">
-            <Card.Body>
-              <FaUsers size={28} className="text-primary mb-2" />
-              <h6>Users</h6>
-              <Badge bg="primary">{totalUsers}</Badge>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={4}>
-          <Card className="text-center shadow-sm">
-            <Card.Body>
-              <FaUserShield size={28} className="text-success mb-2" />
-              <h6>Admins</h6>
-              <Badge bg="success">{totalAdmins}</Badge>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={4}>
-          <Card className="text-center shadow-sm">
-            <Card.Body>
-              <FaCrown size={28} className="text-warning mb-2" />
-              <h6>SuperAdmins</h6>
-              <Badge bg="warning" text="dark">{totalSuperAdmins}</Badge>
-            </Card.Body>
-          </Card>
-        </Col>
+        {[
+          { label: "Users", count: stats.user, icon: FaUsers, color: "primary" },
+          { label: "Admins", count: stats.admin, icon: FaUserShield, color: "success" },
+          { label: "SuperAdmins", count: stats.superadmin, icon: FaCrown, color: "warning" },
+        ].map((s, i) => (
+          <Col md={4} key={i}>
+            <Card className="text-center shadow-sm border-0">
+              <Card.Body>
+                <s.icon size={26} className={`text-${s.color} mb-2`} />
+                <h6 className="text-muted">{s.label}</h6>
+                <h3 className="fw-bold">{s.count}</h3>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
       </Row>
 
-      {/* USERS TABLE */}
-      {loading ? (
-        <div className="text-center my-5"><Spinner animation="border" /></div>
-      ) : (
-        <Table striped bordered hover responsive>
-          <thead className="table-dark">
-            <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th width="180">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user, i) => (
-              <tr key={user._id}>
-                <td>{i + 1}</td>
-                <td>{user.name}</td>
-                <td>{user.email}</td>
-                <td>
-                  <Form.Select
-                    value={user.role}
-                    onChange={(e) =>
-                      setUsers(prev =>
-                        prev.map(u =>
-                          u._id === user._id ? { ...u, role: e.target.value } : u
-                        )
-                      )
-                    }
-                  >
-                    {roles.map(r => <option key={r}>{r}</option>)}
-                  </Form.Select>
-                </td>
-                <td className="d-flex gap-2">
-                  <Button
-                    variant="success"
-                    size="sm"
-                    onClick={() => updateUser(user._id, user.role)}
-                    disabled={updatingUserId === user._id}
-                  >
-                    <FaEdit /> Update
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => deleteUser(user._id)}
-                    disabled={updatingUserId === user._id}
-                  >
-                    <FaTrash /> Delete
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      )}
+      {/* TABLE */}
+      <Card className="shadow-sm border-0">
+        <Card.Body>
+          <InputGroup className="mb-3">
+            <InputGroup.Text>
+              <FaSearch />
+            </InputGroup.Text>
+            <Form.Control
+              placeholder="Search by name or email"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </InputGroup>
+
+          {loading ? (
+            <div className="text-center py-5">
+              <Spinner />
+            </div>
+          ) : (
+            <>
+              <Table hover responsive className="align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th className="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentUsers.map((user, i) => {
+                    const isSuperAdmin = user.role === "superadmin";
+                    const isUpdating = updatingUserId === user._id;
+
+                    return (
+                      <tr key={user._id}>
+                        <td>{indexOfFirstUser + i + 1}</td>
+                        <td>
+                          <div className="fw-bold">{user.name}</div>
+                          <small className="text-muted">{user.email}</small>
+                        </td>
+
+                        {/* ROLE */}
+                        <td>
+                          {isSuperAdmin ? (
+                            <Badge bg="warning" text="dark">
+                              <FaCrown className="me-1" /> SUPERADMIN 🔒
+                            </Badge>
+                          ) : (
+                            <Form.Select
+                              size="sm"
+                              style={{ width: 150 }}
+                              value={user.role}
+                              disabled={isUpdating}
+                              onChange={(e) =>
+                                updateUserRole(user._id, e.target.value)
+                              }
+                            >
+                              {ROLES.map((r) => (
+                                <option key={r}>{r}</option>
+                              ))}
+                            </Form.Select>
+                          )}
+                        </td>
+
+                        {/* ACTIONS */}
+                        <td className="text-end">
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={
+                              <Tooltip>
+                                {isSuperAdmin
+                                  ? "SuperAdmin cannot be deleted"
+                                  : "Delete user"}
+                              </Tooltip>
+                            }
+                          >
+                            <span className="d-inline-block">
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                disabled={isSuperAdmin || isUpdating}
+                                onClick={() => deleteUser(user._id)}
+                              >
+                                {isUpdating ? (
+                                  <Spinner size="sm" />
+                                ) : (
+                                  <FaTrash />
+                                )}
+                              </Button>
+                            </span>
+                          </OverlayTrigger>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </Table>
+
+              {/* PAGINATION */}
+              {totalPages > 1 && (
+                <div className="d-flex justify-content-center">
+                  <Pagination>
+                    {[...Array(totalPages)].map((_, i) => (
+                      <Pagination.Item
+                        key={i}
+                        active={i + 1 === currentPage}
+                        onClick={() => setCurrentPage(i + 1)}
+                      >
+                        {i + 1}
+                      </Pagination.Item>
+                    ))}
+                  </Pagination>
+                </div>
+              )}
+            </>
+          )}
+        </Card.Body>
+      </Card>
     </SuperAdminLayout>
   );
 };

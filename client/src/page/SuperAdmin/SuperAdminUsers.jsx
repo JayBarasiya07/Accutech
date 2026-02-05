@@ -1,4 +1,3 @@
-// src/pages/Admin/AdminUsers.jsx
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Table,
@@ -9,65 +8,85 @@ import {
   Col,
   Spinner,
   Alert,
+  Badge,
+  Card,
+  ProgressBar,
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { FaTrash, FaKey, FaSync } from "react-icons/fa";
 import SuperAdminLayout from "../../components/SuperAdmin/SuperAdminLayout";
 
-// Permission fields
+const API_BASE = "http://localhost:8000/api/users";
+
 const permissionFields = [
-  "srNo","category","salesPerson","offices","plants","location","contactPerson",
-  "department","designation","mobile","email","decision","currentUPS","scopeSRC",
-  "racks","cooling","roomAge",
+  "srNo",
+  "category",
+  "salesPerson",
+  "offices",
+  "plants",
+  "location",
+  "contactPerson",
+  "department",
+  "designation",
+  "mobile",
+  "email",
+  "decision",
+  "currentUPS",
+  "scopeSRC",
+  "racks",
+  "cooling",
+  "roomAge",
 ];
+
+const formatLabel = (str) =>
+  str.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
 
 const AdminUsers = ({ searchTerm = "" }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [status, setStatus] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [updatingUserId, setUpdatingUserId] = useState(null);
-  const [savingPermissions, setSavingPermissions] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
-  // Redirect if no token
-  useEffect(() => {
-    if (!token) navigate("/login");
-  }, [token, navigate]);
-
-  // Fetch users
-  const loadUsers = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const loggedInUserId = useMemo(() => {
     try {
-      const res = await fetch("http://localhost:8000/api/users", {
+      return token ? JSON.parse(atob(token.split(".")[1])).id : null;
+    } catch {
+      return null;
+    }
+  }, [token]);
+
+  const showAlert = (msg, type = "success") => {
+    setStatus({ msg, type });
+    setTimeout(() => setStatus(null), 3500);
+  };
+
+  const loadUsers = useCallback(async () => {
+    if (!token) return navigate("/login");
+    setLoading(true);
+    try {
+      const res = await fetch(API_BASE, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (res.status === 403) throw new Error("Forbidden: Only SuperAdmin can access");
-      if (!res.ok) throw new Error(`Failed to fetch users. Status: ${res.status}`);
-
-      const data = await res.json();
-      setUsers(data);
+      if (!res.ok) throw new Error("Failed to load users");
+      setUsers(await res.json());
     } catch (err) {
-      console.error(err);
-      setError(err.message || "Failed to fetch users ❌");
-      setTimeout(() => setError(""), 4000);
+      showAlert(err.message, "danger");
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, navigate]);
 
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
 
-  // Filter users based on search
   const filteredUsers = useMemo(() => {
-    if (!searchTerm) return users;
     return users.filter(
       (u) =>
         u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,45 +94,27 @@ const AdminUsers = ({ searchTerm = "" }) => {
     );
   }, [users, searchTerm]);
 
-  // Open permissions modal
-  const openPermissionModal = (user) => {
-    setCurrentUser({
-      ...user,
-      permissions: user.permissions || {},
-    });
-    setShowModal(true);
-  };
-
-  // Toggle single permission
-  const togglePermission = (key) => {
+  const togglePermission = (field) => {
     setCurrentUser((prev) => ({
       ...prev,
-      permissions: { ...prev.permissions, [key]: !prev.permissions[key] },
+      permissions: {
+        ...prev.permissions,
+        [field]: !prev.permissions?.[field],
+      },
     }));
   };
 
-  // Select all permissions
-  const selectAllPermissions = () => {
-    const allSelected = {};
-    permissionFields.forEach((key) => (allSelected[key] = true));
-    setCurrentUser((prev) => ({ ...prev, permissions: allSelected }));
+  const bulkPermissions = (value) => {
+    const updated = {};
+    permissionFields.forEach((f) => (updated[f] = value));
+    setCurrentUser((prev) => ({ ...prev, permissions: updated }));
   };
 
-  // Clear all permissions
-  const clearAllPermissions = () => {
-    const allCleared = {};
-    permissionFields.forEach((key) => (allCleared[key] = false));
-    setCurrentUser((prev) => ({ ...prev, permissions: allCleared }));
-  };
-
-  // Save permissions
   const savePermissions = async () => {
-    if (!currentUser?._id) return;
-
-    setSavingPermissions(true);
+    setSaving(true);
     try {
       const res = await fetch(
-        `http://localhost:8000/api/users/${currentUser._id}/permissions`,
+        `${API_BASE}/${currentUser._id}/permissions`,
         {
           method: "PUT",
           headers: {
@@ -123,79 +124,43 @@ const AdminUsers = ({ searchTerm = "" }) => {
           body: JSON.stringify({ permissions: currentUser.permissions }),
         }
       );
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        throw new Error(errData?.message || "Failed to update permissions");
-      }
-
-      setSuccess("Permissions updated successfully ✅");
+      if (!res.ok) throw new Error("Update failed");
+      showAlert("Permissions updated successfully");
       setShowModal(false);
-      setCurrentUser(null);
       loadUsers();
-      setTimeout(() => setSuccess(""), 4000);
     } catch (err) {
-      console.error(err);
-      setError(err.message || "Failed to update permissions ❌");
-      setTimeout(() => setError(""), 4000);
+      showAlert(err.message, "danger");
     } finally {
-      setSavingPermissions(false);
+      setSaving(false);
     }
   };
 
-  // Delete user
   const deleteUser = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
-    setUpdatingUserId(id);
+    if (id === loggedInUserId)
+      return showAlert("You cannot delete yourself", "danger");
+
+    if (!window.confirm("Delete this user permanently?")) return;
+
+    setDeletingId(id);
     try {
-      const res = await fetch(`http://localhost:8000/api/users/${id}`, {
+      const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        throw new Error(errData?.message || "Failed to delete user");
-      }
-
-      setSuccess("User deleted successfully ✅");
-      loadUsers();
-      setTimeout(() => setSuccess(""), 4000);
+      if (!res.ok) throw new Error("Delete failed");
+      setUsers((prev) => prev.filter((u) => u._id !== id));
+      showAlert("User deleted");
     } catch (err) {
-      console.error(err);
-      setError(err.message || "Failed to delete user ❌");
-      setTimeout(() => setError(""), 4000);
+      showAlert(err.message, "danger");
     } finally {
-      setUpdatingUserId(null);
+      setDeletingId(null);
     }
   };
 
-  // Update role
-  const updateRole = async (userId, newRole) => {
-    setUpdatingUserId(userId);
-    try {
-      const res = await fetch(`http://localhost:8000/api/users/${userId}/role`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ role: newRole }),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        throw new Error(errData?.message || "Failed to update role");
-      }
-
-      setSuccess("Role updated successfully ✅");
-      loadUsers();
-      setTimeout(() => setSuccess(""), 4000);
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Failed to update role ❌");
-      setTimeout(() => setError(""), 4000);
-    } finally {
-      setUpdatingUserId(null);
-    }
-  };
+  const activeCount = useMemo(() => {
+    if (!currentUser?.permissions) return 0;
+    return Object.values(currentUser.permissions).filter(Boolean).length;
+  }, [currentUser]);
 
   return (
     <SuperAdminLayout
@@ -203,120 +168,143 @@ const AdminUsers = ({ searchTerm = "" }) => {
       totalAdmins={users.filter((u) => u.role === "admin").length}
       refresh={loadUsers}
     >
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>User Permission Manager</h2>
-        <Button onClick={loadUsers} variant="outline-primary">Refresh</Button>
-      </div>
+      <Card className="shadow-sm border-0">
+        <Card.Body>
+          <div className="d-flex justify-content-between mb-3">
+            <h4>User Permission Management</h4>
+            <Button size="sm" variant="outline-secondary" onClick={loadUsers}>
+              <FaSync /> Refresh
+            </Button>
+          </div>
 
-      {error && <Alert variant="danger" dismissible onClose={() => setError("")}>{error}</Alert>}
-      {success && <Alert variant="success" dismissible onClose={() => setSuccess("")}>{success}</Alert>}
+          {status && <Alert variant={status.type}>{status.msg}</Alert>}
 
-      {loading ? (
-        <div className="text-center my-5"><Spinner animation="border" /></div>
-      ) : (
-        <Table striped bordered hover responsive>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Permissions</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((user, i) => {
-                const enabledPermissions = Object.keys(user.permissions || {}).filter(
-                  (k) => user.permissions[k]
-                ).length;
-                return (
-                  <tr key={user._id}>
-                    <td>{i + 1}</td>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>
-                      <Form.Select
-                        size="sm"
-                        value={user.role}
-                        onChange={(e) => updateRole(user._id, e.target.value)}
-                        disabled={updatingUserId === user._id}
-                      >
-                        <option value="user">User</option>
-                        <option value="admin">Admin</option>
-                        <option value="superadmin">SuperAdmin</option>
-                      </Form.Select>
-                    </td>
-                    <td>{enabledPermissions} / {permissionFields.length}</td>
-                    <td className="d-flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={() => openPermissionModal(user)}
-                        disabled={savingPermissions || updatingUserId === user._id}
-                      >
-                        Permissions
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        onClick={() => deleteUser(user._id)}
-                        disabled={updatingUserId === user._id}
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan={6} className="text-center">No users found</td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      )}
+          {loading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" />
+            </div>
+          ) : (
+            <Table hover responsive>
+              <thead className="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Permissions</th>
+                  <th className="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((u, i) => {
+                  const count = Object.values(u.permissions || {}).filter(
+                    Boolean
+                  ).length;
+                  return (
+                    <tr key={u._id}>
+                      <td>{i + 1}</td>
+                      <td>
+                        <div className="fw-bold">{u.name}</div>
+                        <small className="text-muted">{u.email}</small>
+                      </td>
+                      <td>
+                        <Badge bg="info" className="text-uppercase">
+                          {u.role}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Badge bg={count ? "success" : "secondary"}>
+                          {count}/{permissionFields.length}
+                        </Badge>
+                      </td>
+                      <td className="text-end">
+                        <Button
+                          size="sm"
+                          variant="outline-primary"
+                          className="me-2"
+                          onClick={() => {
+                            setCurrentUser(u);
+                            setShowModal(true);
+                          }}
+                        >
+                          <FaKey />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline-danger"
+                          disabled={deletingId === u._id}
+                          onClick={() => deleteUser(u._id)}
+                        >
+                          {deletingId === u._id ? (
+                            <Spinner size="sm" />
+                          ) : (
+                            <FaTrash />
+                          )}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          )}
+        </Card.Body>
+      </Card>
 
-      {/* Permissions Modal */}
+      {/* PERMISSION MODAL */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
         <Modal.Header closeButton>
-          <Modal.Title>Edit Permissions</Modal.Title>
+          <Modal.Title>{currentUser?.name} – Permissions</Modal.Title>
         </Modal.Header>
+
         <Modal.Body>
-          {currentUser && (
-            <Form>
-              <div className="mb-3 d-flex gap-2">
-                <Button variant="success" size="sm" onClick={selectAllPermissions}>
-                  Select All
-                </Button>
-                <Button variant="secondary" size="sm" onClick={clearAllPermissions}>
-                  Clear All
-                </Button>
-              </div>
-              <Row>
-                {permissionFields.map((key) => (
-                  <Col md={4} key={key}>
-                    <Form.Check
-                      type="checkbox"
-                      label={key}
-                      checked={currentUser.permissions?.[key] || false}
-                      onChange={() => togglePermission(key)}
-                    />
-                  </Col>
-                ))}
-              </Row>
-              <Button
-                className="mt-3"
-                onClick={savePermissions}
-                disabled={savingPermissions}
-              >
-                {savingPermissions ? "Saving..." : "Save Permissions"}
-              </Button>
-            </Form>
-          )}
+          <div className="mb-3">
+            <ProgressBar
+              now={(activeCount / permissionFields.length) * 100}
+              label={`${activeCount} enabled`}
+            />
+          </div>
+
+          <div className="d-flex justify-content-center gap-2 mb-3">
+            <Button size="sm" variant="success" onClick={() => bulkPermissions(true)}>
+              Select All
+            </Button>
+            <Button size="sm" variant="danger" onClick={() => bulkPermissions(false)}>
+              Clear All
+            </Button>
+          </div>
+
+          <Row className="g-2">
+            {permissionFields.map((field) => (
+              <Col md={4} key={field}>
+                <div
+                  className={`p-2 border rounded d-flex justify-content-between align-items-center ${
+                    currentUser?.permissions?.[field]
+                      ? "bg-success-subtle border-success"
+                      : ""
+                  }`}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => togglePermission(field)}
+                >
+                  <span>{formatLabel(field)}</span>
+                  <Form.Check
+                    type="switch"
+                    checked={!!currentUser?.permissions?.[field]}
+                    readOnly
+                  />
+                </div>
+              </Col>
+            ))}
+          </Row>
         </Modal.Body>
+
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={savePermissions} disabled={saving}>
+            {saving ? <Spinner size="sm" /> : "Save Changes"}
+          </Button>
+        </Modal.Footer>
       </Modal>
     </SuperAdminLayout>
   );

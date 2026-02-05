@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// ================= VERIFY TOKEN =================
 export const verifyToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -11,48 +10,40 @@ export const verifyToken = async (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id).select("-password");
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(401).json({ message: "User not found" });
     }
 
-    req.user = user; // 🔑 attach logged-in user
+    req.user = user;
     next();
   } catch (error) {
-    console.error("Token error:", error);
-
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({ message: "Token expired. Please login again." });
-    }
-
     return res.status(401).json({ message: "Invalid token" });
   }
 };
 
-// ================= ADMIN OR SUPERADMIN =================
 export const isAdminOrSuper = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Unauthorized" });
+  if (req.user.role === "admin" || req.user.role === "superadmin") {
+    return next();
   }
+  return res.status(403).json({ message: "Access denied" });
+};
 
+export const isAdmin = (req, res, next) => {
   if (req.user.role === "admin") {
     return next();
   }
-
-  return res.status(403).json({ message: "Admins only" });
+  return res.status(403).json({ message: "Admin only access" });
 };
 
-// ================= SUPERADMIN ONLY =================
 export const isSuperAdmin = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Unauthorized" });
+  if (req.user.role === "superadmin") {
+    return next();
   }
-
-  if (req.user.role !== "superadmin") {
-    return res.status(403).json({ message: "SuperAdmin only" });
-  }
-
-  next();
+  return res.status(403).json({ message: "Only SuperAdmin allowed" });
 };
+
