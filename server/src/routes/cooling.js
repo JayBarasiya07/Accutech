@@ -4,100 +4,109 @@ import { verifyToken, isAdminOrSuper } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-/* =======================
-   GET ALL (Admin/Super)
-======================= */
+/* ===========================
+   GET ALL COOLING PRODUCTS
+=========================== */
 router.get("/", verifyToken, isAdminOrSuper, async (req, res) => {
   try {
     const coolings = await Cooling.find().sort({ createdAt: -1 });
     res.status(200).json(coolings);
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
+  } catch (error) {
+    console.error("Cooling Fetch Error:", error);
+    res.status(500).json({ message: "Server error while fetching cooling items" });
   }
 });
 
-/* =======================
-   CREATE (Admin/Super)
-======================= */
+/* ===========================
+   CREATE COOLING ITEM
+=========================== */
 router.post("/", verifyToken, isAdminOrSuper, async (req, res) => {
   try {
-    const name = req.body?.name?.trim();
+    let { name } = req.body;
 
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.status(400).json({ message: "Cooling name is required" });
     }
+
+    name = name.trim();
 
     const exists = await Cooling.findOne({ name });
     if (exists) {
-      return res.status(400).json({ message: "Cooling already exists" });
+      return res.status(400).json({ message: "Cooling item already exists" });
     }
 
-    const cooling = await Cooling.create({ name });
-    res.status(201).json(cooling);
+    const newCooling = await Cooling.create({ name });
 
-  } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({ message: "Cooling already exists" });
+    res.status(201).json(newCooling);
+
+  } catch (error) {
+    console.error("Cooling Create Error:", error);
+
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "Cooling item already exists" });
     }
-    res.status(500).json({ message: "Server error" });
+
+    res.status(500).json({ message: "Server error while creating cooling item" });
   }
 });
 
-/* =======================
-   UPDATE (Admin/Super)
-======================= */
+/* ===========================
+   UPDATE COOLING ITEM
+=========================== */
 router.put("/:id", verifyToken, isAdminOrSuper, async (req, res) => {
   try {
-    const name = req.body?.name?.trim();
+    let { name } = req.body;
 
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.status(400).json({ message: "Cooling name is required" });
     }
 
+    name = name.trim();
+
+    // check duplicate name except current id
     const duplicate = await Cooling.findOne({
       name,
-      _id: { $ne: req.params.id },
+      _id: { $ne: req.params.id }
     });
 
     if (duplicate) {
-      return res.status(400).json({ message: "Cooling already exists" });
+      return res.status(400).json({ message: "Cooling item already exists" });
     }
 
-    const updated = await Cooling.findByIdAndUpdate(
+    const updatedCooling = await Cooling.findByIdAndUpdate(
       req.params.id,
       { name },
       { new: true, runValidators: true }
     );
 
-    if (!updated) {
-      return res.status(404).json({ message: "Cooling not found" });
+    if (!updatedCooling) {
+      return res.status(404).json({ message: "Cooling item not found" });
     }
 
-    res.json(updated);
+    res.status(200).json(updatedCooling);
 
-  } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({ message: "Cooling already exists" });
-    }
-    res.status(500).json({ message: "Server error" });
+  } catch (error) {
+    console.error("Cooling Update Error:", error);
+    res.status(500).json({ message: "Server error while updating cooling item" });
   }
 });
 
-/* =======================
-   DELETE (Admin/Super)
-======================= */
+/* ===========================
+   DELETE COOLING ITEM
+=========================== */
 router.delete("/:id", verifyToken, isAdminOrSuper, async (req, res) => {
   try {
-    const deleted = await Cooling.findByIdAndDelete(req.params.id);
+    const deletedCooling = await Cooling.findByIdAndDelete(req.params.id);
 
-    if (!deleted) {
-      return res.status(404).json({ message: "Cooling not found" });
+    if (!deletedCooling) {
+      return res.status(404).json({ message: "Cooling item not found" });
     }
 
-    res.json({ message: "Cooling deleted successfully" });
+    res.status(200).json({ message: "Cooling item deleted successfully" });
 
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
+  } catch (error) {
+    console.error("Cooling Delete Error:", error);
+    res.status(500).json({ message: "Server error while deleting cooling item" });
   }
 });
 

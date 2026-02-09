@@ -1,15 +1,24 @@
 // src/pages/Admin/AdminCustomerList.jsx
 import React, { useEffect, useState } from "react";
-import { Table, Button, Pagination, Col, Row, Offcanvas } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  Table,
+  Button,
+  Pagination,
+  Col,
+  Row,
+  Offcanvas,
+  Form,
+} from "react-bootstrap";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import AdminSidebar from "../../components/Admin/AdminSidebar";
 
 const AdminCustomerList = () => {
-  const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(""); // ✅ Search state
   const [currentPage, setCurrentPage] = useState(1);
   const [showSidebar, setShowSidebar] = useState(false);
+
   const itemsPerPage = 10;
   const token = localStorage.getItem("token");
 
@@ -32,7 +41,9 @@ const AdminCustomerList = () => {
 
   // Delete customer
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this customer?")) return;
+    if (!window.confirm("Are you sure you want to delete this customer?"))
+      return;
+
     try {
       await axios.delete(`http://localhost:8000/api/customers/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -44,9 +55,18 @@ const AdminCustomerList = () => {
     }
   };
 
+  // ✅ Search filter (search all fields)
+  const filteredCustomers = customers.filter((cust) => {
+    return Object.values(cust)
+      .join(" ")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+  });
+
   // Pagination
-  const totalPages = Math.ceil(customers.length / itemsPerPage);
-  const paginatedData = customers.slice(
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+
+  const paginatedData = filteredCustomers.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -54,16 +74,36 @@ const AdminCustomerList = () => {
   const paginationItems = [];
   for (let i = 1; i <= totalPages; i++) {
     paginationItems.push(
-      <Pagination.Item key={i} active={i === currentPage} onClick={() => setCurrentPage(i)}>
+      <Pagination.Item
+        key={i}
+        active={i === currentPage}
+        onClick={() => setCurrentPage(i)}
+      >
         {i}
       </Pagination.Item>
     );
   }
 
   const columns = [
-    "No","SrNo","Category","CustomerName","SalesPerson","Offices","Plants","Location","ContactPerson",
-    "Department","Designation","Mobile","Email","Decision","CurrentUPS","ScopeSRC","Racks",
-    "Cooling","RoomAge"
+    "No",
+    "SrNo",
+    "Category",
+    "CustomerName",
+    "SalesPerson",
+    "Offices",
+    "Plants",
+    "Location",
+    "ContactPerson",
+    "Department",
+    "Designation",
+    "Mobile",
+    "Email",
+    "Decision",
+    "CurrentUPS",
+    "ScopeSRC",
+    "Racks",
+    "Cooling",
+    "RoomAge",
   ];
 
   return (
@@ -85,16 +125,26 @@ const AdminCustomerList = () => {
 
       {/* Main content */}
       <Col md={10} className="p-3">
-        <div className="d-md-none mb-3">
-          <Button onClick={() => setShowSidebar(true)}>☰ Menu</Button>
-        </div>
-
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h2>Customer List</h2>
+
           <Link to="/admin/customers/add">
             <Button variant="success">+ Add New Customer</Button>
           </Link>
         </div>
+
+        {/* ✅ Search Box */}
+        <Form className="mb-3">
+          <Form.Control
+            type="text"
+            placeholder="Search customer (Search in all fields...)"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1); // ✅ reset page after search
+            }}
+          />
+        </Form>
 
         <div className="table-responsive">
           <Table striped bordered hover>
@@ -106,6 +156,7 @@ const AdminCustomerList = () => {
                 <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {paginatedData.length ? (
                 paginatedData.map((cust, idx) => (
@@ -129,11 +180,23 @@ const AdminCustomerList = () => {
                     <td>{cust.racks || "-"}</td>
                     <td>{cust.cooling || "-"}</td>
                     <td>{cust.roomAge || "-"}</td>
+
                     <td className="text-center">
                       <Link to={`/admin/customers/edit/${cust._id}`}>
-                        <Button variant="warning" size="sm" className="me-1">Edit</Button>
+                        <Button
+                          variant="warning"
+                          size="sm"
+                          className="me-1"
+                        >
+                          Edit
+                        </Button>
                       </Link>
-                      <Button variant="danger" size="sm" onClick={() => handleDelete(cust._id)}>
+
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDelete(cust._id)}
+                      >
                         Delete
                       </Button>
                     </td>

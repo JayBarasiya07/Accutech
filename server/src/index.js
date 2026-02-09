@@ -35,6 +35,9 @@ app.use("/api/users", userRoutes); // Added user routes
 // app.use("/api", dashboard); // Dashboard routes
 app.use("/api/admin", adminRouters); // Admin routes
 
+app.get("/", (req, res) => {
+  res.send("Accutech API Running...");
+});
 // Start the server
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

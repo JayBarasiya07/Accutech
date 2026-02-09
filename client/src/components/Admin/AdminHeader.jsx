@@ -1,46 +1,69 @@
-import React from "react";
-import { Navbar, Container, Form, FormControl, Image } from "react-bootstrap";
-import { FaUserCircle } from "react-icons/fa";
+import React, { useState } from "react";
+import { Navbar, Container, FormControl, InputGroup, Button, Image } from "react-bootstrap";
+import { FaUserCircle, FaSearch, FaBars } from "react-icons/fa";
+import './AdminSidebar.css'; // Reuse dashboard CSS
 
-const AdminHeader = ({ onSearch }) => {
-  // Get admin info from localStorage
-  const admin = JSON.parse(localStorage.getItem("user")) || { name: "Admin", email: "" };
+const AdminHeader = ({ onSearch, toggleSidebar }) => {
+  const admin = JSON.parse(localStorage.getItem("user")) || { name: "Admin", email: "admin@accutech.com", avatar: null };
+  const [searchVal, setSearchVal] = useState("");
+  const [focused, setFocused] = useState(false);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchVal(value);
+    onSearch(value); // Call parent search function
+  };
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg" sticky="top" className="px-3">
-      <Container fluid>
+    <Navbar sticky="top" className="admin-header-top px-4 shadow-sm">
+      <Container fluid className="d-flex align-items-center justify-content-between p-0">
+
+        {/* Mobile Sidebar Toggle */}
+        <Button variant="light" className="d-lg-none me-2" onClick={toggleSidebar}>
+          <FaBars />
+        </Button>
+
         {/* Brand */}
-        <Navbar.Brand href="/admin/dashboard">Accutech</Navbar.Brand>
+        <Navbar.Brand href="/admin/dashboard" className="text-primary fw-bold d-flex align-items-center" style={{ fontSize: '1.5rem' }}>
+          Accutech
+        </Navbar.Brand>
 
-        {/* Search bar */}
-        <Form className="d-flex ms-auto me-3">
-          <FormControl
-            type="search"
-            placeholder="Search anything..."
-            className="me-2"
-            onChange={(e) => onSearch(e.target.value)}
-          />
-        </Form>
-
-        {/* Admin info with avatar */}
-        <div className="d-flex align-items-center text-white">
-          {/* Profile avatar */}
-          {admin.avatar ? (
-            <Image 
-              src={admin.avatar} 
-              roundedCircle 
-              width={40} 
-              height={40} 
-              className="me-2"
+        {/* Search Bar */}
+        <div className="d-none d-md-block flex-grow-1 mx-3">
+          <InputGroup 
+            className={`glass-input-group shadow-sm ${focused ? "focused" : ""}`} 
+            style={{ transition: "all 0.3s ease" }}
+          >
+            <InputGroup.Text className="search-icon-box bg-white text-primary">
+              <FaSearch />
+            </InputGroup.Text>
+            <FormControl
+              type="search"
+              placeholder="Quick search..."
+              value={searchVal}
+              onChange={handleSearchChange}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              className="glass-search-input"
+              style={{
+                transition: "width 0.3s ease",
+                width: focused ? "320px" : "220px"
+              }}
             />
-          ) : (
-            <FaUserCircle size={40} className="me-2" />
-          )}
+          </InputGroup>
+        </div>
 
-          {/* Name and email */}
-          <div className="d-flex flex-column" style={{ lineHeight: 1 }}>
-            <span style={{ fontWeight: "bold" }}>{admin.name}</span>
-            <span style={{ fontSize: "0.8rem" }}>{admin.email}</span>
+        {/* Admin Profile */}
+        <div className="admin-profile d-flex align-items-center text-dark position-relative">
+          {admin.avatar ? (
+            <Image src={admin.avatar} roundedCircle className="avatar shadow-sm" />
+          ) : (
+            <div className="avatar avatar-gradient shadow-sm">{admin.name.charAt(0)}</div>
+          )}
+          <div className="online-indicator"></div>
+          <div className="admin-text-info d-none d-sm-flex flex-column ms-2">
+            <span className="fw-bold">{admin.name}</span>
+            <span className="small text-muted">{admin.email}</span>
           </div>
         </div>
       </Container>

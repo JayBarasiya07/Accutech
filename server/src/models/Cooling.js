@@ -4,7 +4,7 @@ const coolingSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Cooling name is required"],
+      required: true,
       trim: true,
       unique: true,
     },
