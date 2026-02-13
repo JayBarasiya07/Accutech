@@ -14,6 +14,7 @@ import userRoutes from "./routes/userRoutes.js";
 // import dashboard from "./routes/dashboard.js";
 import adminRouters from "./routes/adminRoutes.js";
 
+
 dotenv.config();
 const app = express();
 app.use(cors());
@@ -34,6 +35,7 @@ app.use("/api/about", aboutRoutes);
 app.use("/api/users", userRoutes); // Added user routes
 // app.use("/api", dashboard); // Dashboard routes
 app.use("/api/admin", adminRouters); // Admin routes
+
 
 app.get("/", (req, res) => {
   res.send("Accutech API Running...");

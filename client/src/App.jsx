@@ -20,6 +20,7 @@ import VerifyOTP from "./components/verify-otp";
 import ResetPassword from "./components/ResetPassword";
 import Profile from "./page/User/Profile";  
 
+
 // ---------------- ADMIN ----------------
 import AdminHeader from "./components/Admin/AdminHeader";
 import AdminFooter from "./components/Admin/AdminFooter";
@@ -37,6 +38,7 @@ import SuperAdminSidebar from "./components/SuperAdmin/SuperAdminSidebar";
 import SuperAdminDashboard from "./page/SuperAdmin/SuperAdminDashboard";
 import SuperAdminUsers from "./page/SuperAdmin/SuperAdminUsers";
 import SuperAdminCustomerList from "./page/SuperAdmin/SuperAdminCustomerList";
+import SuperAdminAddCustomer from "./page/SuperAdmin/SuperAdminAddCustomer";
 
 // ---------------- LAYOUTS ----------------
 
@@ -102,6 +104,8 @@ const App = () => (
       <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
       <Route path="/superadmin/users" element={<SuperAdminUsers />} />
       <Route path="/superadmin/customers" element={<SuperAdminCustomerList />} />
+      <Route path="/superadmin/customers/add" element={<SuperAdminAddCustomer />} />
+      <Route path="/superadmin/customers/edit/:id" element={<SuperAdminAddCustomer />} />
       
       {/* Add more SuperAdmin routes here as needed */}
     </Routes>

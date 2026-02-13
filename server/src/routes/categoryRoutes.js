@@ -1,69 +1,87 @@
 import express from "express";
 import Category from "../models/Category.js";
-import { verifyToken, isAdminOrSuper } from "../middlewares/authMiddleware.js";
+import { verifyToken, isAdminOrSuperAdmin } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 // ---------------- GET ALL CATEGORIES ----------------
 // Admin + SuperAdmin can view
-router.get("/", verifyToken, isAdminOrSuper, async (req, res) => {
+router.get("/", verifyToken, isAdminOrSuperAdmin, async (req, res) => {
   try {
     const categories = await Category.find().sort({ createdAt: -1 });
-    res.json(categories);
+    return res.status(200).json(categories);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("GET Categories Error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
 // ---------------- CREATE CATEGORY ----------------
 // Admin + SuperAdmin can create
-router.post("/", verifyToken, isAdminOrSuper, async (req, res) => {
-  const { name } = req.body;
-  if (!name) return res.status(400).json({ message: "Category name is required" });
-
+router.post("/", verifyToken, isAdminOrSuperAdmin, async (req, res) => {
   try {
-    const exists = await Category.findOne({ name });
-    if (exists) return res.status(400).json({ message: "Category already exists" });
+    const { name } = req.body;
 
-    const newCategory = new Category({ name });
+    if (!name) {
+      return res.status(400).json({ message: "Category name is required" });
+    }
+
+    const exists = await Category.findOne({ name: name.trim() });
+    if (exists) {
+      return res.status(400).json({ message: "Category already exists" });
+    }
+
+    const newCategory = new Category({ name: name.trim() });
     await newCategory.save();
-    res.status(201).json(newCategory);
+
+    return res.status(201).json(newCategory);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("CREATE Category Error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
 // ---------------- UPDATE CATEGORY ----------------
-router.put("/:id", verifyToken, isAdminOrSuper, async (req, res) => {
-  const { name } = req.body;
-  if (!name) return res.status(400).json({ message: "Category name is required" });
-
+// Admin + SuperAdmin can update
+router.put("/:id", verifyToken, isAdminOrSuperAdmin, async (req, res) => {
   try {
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: "Category name is required" });
+    }
+
     const updated = await Category.findByIdAndUpdate(
       req.params.id,
-      { name },
+      { name: name.trim() },
       { new: true, runValidators: true }
     );
 
-    if (!updated) return res.status(404).json({ message: "Category not found" });
-    res.json(updated);
+    if (!updated) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    return res.status(200).json(updated);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("UPDATE Category Error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
 // ---------------- DELETE CATEGORY ----------------
-router.delete("/:id", verifyToken, isAdminOrSuper, async (req, res) => {
+// Admin + SuperAdmin can delete
+router.delete("/:id", verifyToken, isAdminOrSuperAdmin, async (req, res) => {
   try {
     const deleted = await Category.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ message: "Category not found" });
-    res.json({ message: "Category deleted" });
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    return res.status(200).json({ message: "Category deleted successfully" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+    console.error("DELETE Category Error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 });
 

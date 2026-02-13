@@ -1,41 +1,19 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
-  Table,
-  Button,
-  Form,
-  Modal,
-  Row,
-  Col,
-  Spinner,
-  Alert,
-  Badge,
-  Card,
-  ProgressBar,
+  Table, Button, Form, Modal, Row, Col,
+  Spinner, Alert, Badge, Card, ProgressBar,
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { FaTrash, FaKey, FaSync } from "react-icons/fa";
+import { FaTrash, FaKey, FaSync, FaCheckDouble, FaTimesCircle } from "react-icons/fa";
 import SuperAdminLayout from "../../components/SuperAdmin/SuperAdminLayout";
 
 const API_BASE = "http://localhost:8000/api/users";
+const PERMISSION_API = "http://localhost:8000/api/permissions";
 
 const permissionFields = [
-  "srNo",
-  "category",
-  "salesPerson",
-  "offices",
-  "plants",
-  "location",
-  "contactPerson",
-  "department",
-  "designation",
-  "mobile",
-  "email",
-  "decision",
-  "currentUPS",
-  "scopeSRC",
-  "racks",
-  "cooling",
-  "roomAge",
+  "srNo", "category", "salesPerson", "offices", "plants", "location",
+  "contactPerson", "department", "designation", "mobile", "email",
+  "decision", "currentUPS", "scopeSRC", "racks", "cooling", "roomAge",
 ];
 
 const formatLabel = (str) =>
@@ -68,13 +46,17 @@ const AdminUsers = ({ searchTerm = "" }) => {
 
   const loadUsers = useCallback(async () => {
     if (!token) return navigate("/login");
+
     setLoading(true);
     try {
       const res = await fetch(API_BASE, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       if (!res.ok) throw new Error("Failed to load users");
-      setUsers(await res.json());
+
+      const data = await res.json();
+      setUsers(data);
     } catch (err) {
       showAlert(err.message, "danger");
     } finally {
@@ -87,45 +69,56 @@ const AdminUsers = ({ searchTerm = "" }) => {
   }, [loadUsers]);
 
   const filteredUsers = useMemo(() => {
+    const term = searchTerm.toLowerCase();
     return users.filter(
       (u) =>
-        u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        u.name?.toLowerCase().includes(term) ||
+        u.email?.toLowerCase().includes(term)
     );
   }, [users, searchTerm]);
 
+  // Toggle permission
   const togglePermission = (field) => {
     setCurrentUser((prev) => ({
       ...prev,
       permissions: {
-        ...prev.permissions,
+        ...(prev.permissions || {}),
         [field]: !prev.permissions?.[field],
       },
     }));
   };
 
+  // Select all / clear all
   const bulkPermissions = (value) => {
     const updated = {};
     permissionFields.forEach((f) => (updated[f] = value));
-    setCurrentUser((prev) => ({ ...prev, permissions: updated }));
+
+    setCurrentUser((prev) => ({
+      ...prev,
+      permissions: updated,
+    }));
   };
 
   const savePermissions = async () => {
+    if (!currentUser) return;
+
     setSaving(true);
+
     try {
-      const res = await fetch(
-        `${API_BASE}/${currentUser._id}/permissions`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ permissions: currentUser.permissions }),
-        }
-      );
-      if (!res.ok) throw new Error("Update failed");
-      showAlert("Permissions updated successfully");
+      const res = await fetch(`${API_BASE}/${currentUser._id}/permissions`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ permissions: currentUser.permissions }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Update failed");
+
+      showAlert(`Permissions updated for ${currentUser.name}`, "success");
       setShowModal(false);
       loadUsers();
     } catch (err) {
@@ -139,17 +132,22 @@ const AdminUsers = ({ searchTerm = "" }) => {
     if (id === loggedInUserId)
       return showAlert("You cannot delete yourself", "danger");
 
-    if (!window.confirm("Delete this user permanently?")) return;
+    if (!window.confirm("Are you sure? This action is irreversible.")) return;
 
     setDeletingId(id);
+
     try {
       const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("Delete failed");
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Delete failed");
+
       setUsers((prev) => prev.filter((u) => u._id !== id));
-      showAlert("User deleted");
+      showAlert("User successfully removed", "success");
     } catch (err) {
       showAlert(err.message, "danger");
     } finally {
@@ -170,27 +168,37 @@ const AdminUsers = ({ searchTerm = "" }) => {
     >
       <Card className="shadow-sm border-0">
         <Card.Body>
-          <div className="d-flex justify-content-between mb-3">
-            <h4>User Permission Management</h4>
-            <Button size="sm" variant="outline-secondary" onClick={loadUsers}>
-              <FaSync /> Refresh
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h4 className="mb-0 text-primary">User Access Control</h4>
+            <Button
+              size="sm"
+              variant="outline-primary"
+              onClick={loadUsers}
+              disabled={loading}
+            >
+              <FaSync className={loading ? "fa-spin" : ""} />{" "}
+              {loading ? "Loading..." : "Refresh List"}
             </Button>
           </div>
 
-          {status && <Alert variant={status.type}>{status.msg}</Alert>}
+          {status && (
+            <Alert variant={status.type} className="py-2">
+              {status.msg}
+            </Alert>
+          )}
 
           {loading ? (
             <div className="text-center py-5">
-              <Spinner animation="border" />
+              <Spinner animation="grow" variant="primary" />
             </div>
           ) : (
-            <Table hover responsive>
+            <Table hover responsive className="align-middle">
               <thead className="table-light">
                 <tr>
                   <th>#</th>
-                  <th>User</th>
+                  <th>User Details</th>
                   <th>Role</th>
-                  <th>Permissions</th>
+                  <th>Access Level</th>
                   <th className="text-end">Actions</th>
                 </tr>
               </thead>
@@ -199,38 +207,52 @@ const AdminUsers = ({ searchTerm = "" }) => {
                   const count = Object.values(u.permissions || {}).filter(
                     Boolean
                   ).length;
+                  const progress = (count / permissionFields.length) * 100;
+
                   return (
                     <tr key={u._id}>
                       <td>{i + 1}</td>
+
                       <td>
                         <div className="fw-bold">{u.name}</div>
                         <small className="text-muted">{u.email}</small>
                       </td>
+
                       <td>
-                        <Badge bg="info" className="text-uppercase">
+                        <Badge pill bg="info">
                           {u.role}
                         </Badge>
                       </td>
-                      <td>
-                        <Badge bg={count ? "success" : "secondary"}>
-                          {count}/{permissionFields.length}
-                        </Badge>
+
+                      <td style={{ minWidth: "160px" }}>
+                        <div className="small mb-1">
+                          {count} of {permissionFields.length} enabled
+                        </div>
+                        <ProgressBar
+                          now={progress}
+                          variant={progress === 100 ? "success" : "info"}
+                          style={{ height: "6px" }}
+                        />
                       </td>
+
                       <td className="text-end">
                         <Button
                           size="sm"
-                          variant="outline-primary"
-                          className="me-2"
+                          variant="light"
+                          className="me-2 text-primary border"
                           onClick={() => {
-                            setCurrentUser(u);
+                            // deep clone to prevent table data mutation
+                            setCurrentUser(JSON.parse(JSON.stringify(u)));
                             setShowModal(true);
                           }}
                         >
-                          <FaKey />
+                          <FaKey /> Manage
                         </Button>
+
                         <Button
                           size="sm"
-                          variant="outline-danger"
+                          variant="light"
+                          className="text-danger border"
                           disabled={deletingId === u._id}
                           onClick={() => deleteUser(u._id)}
                         >
@@ -251,58 +273,95 @@ const AdminUsers = ({ searchTerm = "" }) => {
       </Card>
 
       {/* PERMISSION MODAL */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
-        <Modal.Header closeButton>
-          <Modal.Title>{currentUser?.name} – Permissions</Modal.Title>
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        size="lg"
+        centered
+        backdrop="static"
+      >
+        <Modal.Header closeButton className="bg-light">
+          <Modal.Title>Permissions: {currentUser?.name}</Modal.Title>
         </Modal.Header>
 
-        <Modal.Body>
-          <div className="mb-3">
-            <ProgressBar
-              now={(activeCount / permissionFields.length) * 100}
-              label={`${activeCount} enabled`}
-            />
+        <Modal.Body className="bg-light-subtle">
+          <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-white rounded border">
+            <div>
+              <h6 className="mb-1">Access Progress</h6>
+              <small className="text-muted">{activeCount} modules active</small>
+            </div>
+
+            <div className="d-flex gap-2">
+              <Button
+                size="sm"
+                variant="outline-success"
+                onClick={() => bulkPermissions(true)}
+              >
+                <FaCheckDouble /> Select All
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline-danger"
+                onClick={() => bulkPermissions(false)}
+              >
+                <FaTimesCircle /> Clear All
+              </Button>
+            </div>
           </div>
 
-          <div className="d-flex justify-content-center gap-2 mb-3">
-            <Button size="sm" variant="success" onClick={() => bulkPermissions(true)}>
-              Select All
-            </Button>
-            <Button size="sm" variant="danger" onClick={() => bulkPermissions(false)}>
-              Clear All
-            </Button>
-          </div>
-
-          <Row className="g-2">
+          <Row className="g-3">
             {permissionFields.map((field) => (
               <Col md={4} key={field}>
-                <div
-                  className={`p-2 border rounded d-flex justify-content-between align-items-center ${
+                <Card
+                  className={`h-100 shadow-sm ${
                     currentUser?.permissions?.[field]
-                      ? "bg-success-subtle border-success"
-                      : ""
+                      ? "border-success bg-success-subtle"
+                      : "border-light"
                   }`}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", transition: "0.2s" }}
                   onClick={() => togglePermission(field)}
                 >
-                  <span>{formatLabel(field)}</span>
-                  <Form.Check
-                    type="switch"
-                    checked={!!currentUser?.permissions?.[field]}
-                    readOnly
-                  />
-                </div>
+                  <Card.Body className="p-2 d-flex justify-content-between align-items-center">
+                    <span className="small fw-semibold">
+                      {formatLabel(field)}
+                    </span>
+
+                    <Form.Check
+                      type="switch"
+                      checked={!!currentUser?.permissions?.[field]}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={() => togglePermission(field)}
+                    />
+                  </Card.Body>
+                </Card>
               </Col>
             ))}
           </Row>
         </Modal.Body>
 
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
+          <Button
+            variant="link"
+            className="text-muted text-decoration-none"
+            onClick={() => setShowModal(false)}
+          >
+            Discard Changes
           </Button>
-          <Button variant="primary" onClick={savePermissions} disabled={saving}>
-            {saving ? <Spinner size="sm" /> : "Save Changes"}
+
+          <Button
+            variant="primary"
+            onClick={savePermissions}
+            disabled={saving}
+            className="px-4"
+          >
+            {saving ? (
+              <>
+                <Spinner size="sm" className="me-2" /> Saving...
+              </>
+            ) : (
+              "Apply Permissions"
+            )}
           </Button>
         </Modal.Footer>
       </Modal>

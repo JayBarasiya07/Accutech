@@ -9,7 +9,7 @@ import {
   Badge,
   Form,
   Stack,
-  Card
+  Card,
 } from "react-bootstrap";
 import { Link, Navigate } from "react-router-dom";
 import axios from "axios";
@@ -64,7 +64,7 @@ const SuperAdminCustomerList = () => {
         c.designation,
         c.decision,
         c.cooling,
-        c.roomAge
+        c.roomAge,
       ]
         .map((v) => (v ? v.toString().toLowerCase() : ""))
         .some((v) => v.includes(search.toLowerCase()))
@@ -104,6 +104,7 @@ const SuperAdminCustomerList = () => {
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
+
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       setSelectedIds(filteredCustomers.map((c) => c._id));
@@ -111,6 +112,7 @@ const SuperAdminCustomerList = () => {
       setSelectedIds([]);
     }
   };
+
   const selectedDataForExport =
     selectedIds.length > 0
       ? customers.filter((c) => selectedIds.includes(c._id))
@@ -134,7 +136,7 @@ const SuperAdminCustomerList = () => {
       Email: c.email || "-",
       Decision: c.decision || "-",
       Cooling: c.cooling || "-",
-      RoomAge: c.roomAge || "-"
+      RoomAge: c.roomAge || "-",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -148,9 +150,26 @@ const SuperAdminCustomerList = () => {
     doc.text("Customer List Report", 40, 30);
     doc.autoTable({
       startY: 50,
-      head: [[
-        "No","SrNo","Category","Customer","Sales","Offices","Plants","Location","Contact","Department","Designation","Mobile","Email","Decision","Cooling","RoomAge"
-      ]],
+      head: [
+        [
+          "No",
+          "SrNo",
+          "Category",
+          "Customer",
+          "Sales",
+          "Offices",
+          "Plants",
+          "Location",
+          "Contact",
+          "Department",
+          "Designation",
+          "Mobile",
+          "Email",
+          "Decision",
+          "Cooling",
+          "RoomAge",
+        ],
+      ],
       body: selectedDataForExport.map((c, i) => [
         i + 1,
         c.srNo || "-",
@@ -167,7 +186,7 @@ const SuperAdminCustomerList = () => {
         c.email || "-",
         c.decision || "-",
         c.cooling || "-",
-        c.roomAge || "-"
+        c.roomAge || "-",
       ]),
       styles: { fontSize: 8 },
       headStyles: { fillColor: [40, 40, 40] },
@@ -184,7 +203,9 @@ const SuperAdminCustomerList = () => {
       });
       setCustomers((prev) => prev.filter((c) => c._id !== id));
       setSelectedIds((prev) => prev.filter((x) => x !== id));
-    } catch  { alert("Delete failed"); }
+    } catch {
+      alert("Delete failed");
+    }
   };
 
   if (!token) return <Navigate to="/login" replace />;
@@ -193,7 +214,11 @@ const SuperAdminCustomerList = () => {
     <SuperAdminLayout>
       <Row className="g-0">
         {/* Mobile Sidebar */}
-        <Offcanvas show={showSidebar} onHide={() => setShowSidebar(false)} className="bg-dark text-light">
+        <Offcanvas
+          show={showSidebar}
+          onHide={() => setShowSidebar(false)}
+          className="bg-dark text-light"
+        >
           <Offcanvas.Header closeButton closeVariant="white">
             <Offcanvas.Title>Menu</Offcanvas.Title>
           </Offcanvas.Header>
@@ -204,20 +229,43 @@ const SuperAdminCustomerList = () => {
 
         {/* Main Content */}
         <Col xs={12} className="p-4">
-
           {/* Header */}
           <Card className="border-0 shadow-sm mb-4 bg-primary text-white">
             <Card.Body className="p-4">
               <Row className="align-items-center">
                 <Col>
-                  <Button variant="light" className="d-md-none me-3" onClick={() => setShowSidebar(true)}>☰</Button>
-                  <h3 className="d-inline-block mb-0 fw-bold">Customer Directory</h3>
-                  <p className="mb-0 opacity-75">Manage and monitor your customer database</p>
+                  <Button
+                    variant="light"
+                    className="d-md-none me-3"
+                    onClick={() => setShowSidebar(true)}
+                  >
+                    ☰
+                  </Button>
+                  <h3 className="d-inline-block mb-0 fw-bold">
+                    Customer Directory
+                  </h3>
+                  <p className="mb-0 opacity-75">
+                    Manage and monitor your customer database
+                  </p>
                 </Col>
                 <Col xs="auto" className="text-end">
                   <Stack direction="horizontal" gap={2}>
-                    <Badge bg="light" text="primary" className="px-3 py-2 fs-6 shadow-sm">Total: {animatedTotal}</Badge>
-                    {selectedIds.length > 0 && <Badge bg="warning" text="dark" className="px-3 py-2 fs-6 shadow-sm">Selected: {selectedIds.length}</Badge>}
+                    <Badge
+                      bg="light"
+                      text="primary"
+                      className="px-3 py-2 fs-6 shadow-sm"
+                    >
+                      Total: {animatedTotal}
+                    </Badge>
+                    {selectedIds.length > 0 && (
+                      <Badge
+                        bg="warning"
+                        text="dark"
+                        className="px-3 py-2 fs-6 shadow-sm"
+                      >
+                        Selected: {selectedIds.length}
+                      </Badge>
+                    )}
                   </Stack>
                 </Col>
               </Row>
@@ -233,12 +281,28 @@ const SuperAdminCustomerList = () => {
                     size="lg"
                     placeholder="🔍 Search customers..."
                     value={search}
-                    onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setCurrentPage(1);
+                    }}
                   />
                 </Col>
-                <Col md={6} className="text-md-end d-flex align-items-center justify-content-md-end gap-2">
-                  <Button variant="success" onClick={exportExcel} disabled={selectedIds.length === 0}>Export Excel</Button>
-                  <Button variant="danger" onClick={exportPDF} disabled={selectedIds.length === 0}>Export PDF</Button>
+
+                <Col
+                  md={6}
+                  className="text-md-end d-flex align-items-center justify-content-md-end gap-2 flex-wrap"
+                >
+                  <Link to="/superadmin/customers/add">
+                    <Button variant="primary">+ Add Customer</Button>
+                  </Link>
+
+                  <Button variant="success" onClick={exportExcel}>
+                    Export Excel
+                  </Button>
+
+                  <Button variant="danger" onClick={exportPDF}>
+                    Export PDF
+                  </Button>
                 </Col>
               </Row>
             </Card.Body>
@@ -250,7 +314,15 @@ const SuperAdminCustomerList = () => {
               <Table hover align="middle" className="mb-0">
                 <thead className="table-dark">
                   <tr>
-                    <th><Form.Check checked={filteredCustomers.length > 0 && selectedIds.length === filteredCustomers.length} onChange={handleSelectAll} /></th>
+                    <th>
+                      <Form.Check
+                        checked={
+                          filteredCustomers.length > 0 &&
+                          selectedIds.length === filteredCustomers.length
+                        }
+                        onChange={handleSelectAll}
+                      />
+                    </th>
                     <th>#</th>
                     <th>SrNo</th>
                     <th>Category</th>
@@ -273,11 +345,23 @@ const SuperAdminCustomerList = () => {
                 <tbody>
                   {paginatedData.length > 0 ? (
                     paginatedData.map((c, i) => (
-                      <tr key={c._id} className={selectedIds.includes(c._id) ? "table-warning" : ""}>
-                        <td><Form.Check checked={selectedIds.includes(c._id)} onChange={() => toggleSelect(c._id)} /></td>
+                      <tr
+                        key={c._id}
+                        className={selectedIds.includes(c._id) ? "table-warning" : ""}
+                      >
+                        <td>
+                          <Form.Check
+                            checked={selectedIds.includes(c._id)}
+                            onChange={() => toggleSelect(c._id)}
+                          />
+                        </td>
                         <td>{(currentPage - 1) * itemsPerPage + i + 1}</td>
                         <td>{c.srNo || "-"}</td>
-                        <td><Badge bg="info" text="dark">{c.category || "-"}</Badge></td>
+                        <td>
+                          <Badge bg="info" text="dark">
+                            {c.category || "-"}
+                          </Badge>
+                        </td>
                         <td>{c.customername || "-"}</td>
                         <td>{c.salesPerson || "-"}</td>
                         <td>{c.offices || "-"}</td>
@@ -292,15 +376,36 @@ const SuperAdminCustomerList = () => {
                         <td>{c.cooling || "-"}</td>
                         <td>{c.roomAge || "-"}</td>
                         <td className="text-center">
-                          <Stack direction="horizontal" gap={2} className="justify-content-center">
-                            <Link to={`/superadmin/customers/edit/${c._id}`}><Button size="sm" variant="outline-primary">Edit</Button></Link>
-                            <Button size="sm" variant="outline-danger" onClick={() => handleDelete(c._id)}>Delete</Button>
+                          <Stack
+                            direction="horizontal"
+                            gap={2}
+                            className="justify-content-center"
+                          >
+                            <Link to={`/superadmin/customers/edit/${c._id}`}>
+                              <Button size="sm" variant="primary">
+                                Update
+                              </Button>
+                            </Link>
+                            <Button
+                              size="sm"
+                              variant="outline-danger"
+                              onClick={() => handleDelete(c._id)}
+                            >
+                              Delete
+                            </Button>
                           </Stack>
                         </td>
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan="18" className="text-center py-5 text-muted">No records found.</td></tr>
+                    <tr>
+                      <td
+                        colSpan="18"
+                        className="text-center py-5 text-muted"
+                      >
+                        No records found.
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </Table>
@@ -311,15 +416,26 @@ const SuperAdminCustomerList = () => {
           {totalPages > 1 && (
             <div className="d-flex justify-content-center mt-4">
               <Pagination className="shadow-sm">
-                <Pagination.Prev disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)} />
+                <Pagination.Prev
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                />
                 {[...Array(totalPages)].map((_, i) => (
-                  <Pagination.Item key={i + 1} active={i + 1 === currentPage} onClick={() => setCurrentPage(i + 1)}>{i + 1}</Pagination.Item>
+                  <Pagination.Item
+                    key={i + 1}
+                    active={i + 1 === currentPage}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </Pagination.Item>
                 ))}
-                <Pagination.Next disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)} />
+                <Pagination.Next
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                />
               </Pagination>
             </div>
           )}
-
         </Col>
       </Row>
     </SuperAdminLayout>

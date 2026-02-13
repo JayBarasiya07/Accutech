@@ -1,23 +1,29 @@
 import express from "express";
-import { verifyToken, isAdminOrSuper } from "../middlewares/authMiddleware.js";
-
 import {
-  getCustomers,
+  getAllCustomers,
   getCustomerById,
   createCustomer,
   updateCustomer,
   deleteCustomer,
 } from "../controllers/customerController.js";
 
+import { verifyToken } from "../middlewares/authMiddleware.js";
+
 const router = express.Router();
 
-// ✅ USER / ADMIN / SUPERADMIN -> can view list
-router.get("/", verifyToken, getCustomers);
+// GET ALL
+router.get("/", verifyToken, getAllCustomers);
+
+// GET BY ID
 router.get("/:id", verifyToken, getCustomerById);
 
-// ✅ ADMIN / SUPERADMIN only -> CRUD
-router.post("/", verifyToken, isAdminOrSuper, createCustomer);
-router.put("/:id", verifyToken, isAdminOrSuper, updateCustomer);
-router.delete("/:id", verifyToken, isAdminOrSuper, deleteCustomer);
+// CREATE
+router.post("/", verifyToken, createCustomer);
+
+// UPDATE
+router.put("/:id", verifyToken, updateCustomer);
+
+// DELETE
+router.delete("/:id", verifyToken, deleteCustomer);
 
 export default router;

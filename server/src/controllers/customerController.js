@@ -1,93 +1,120 @@
 import Customer from "../models/customerModel.js";
 
-// GET all customers
-export const getCustomers = async (req, res) => {
+// ================= GET ALL CUSTOMERS =================
+export const getAllCustomers = async (req, res) => {
   try {
     const customers = await Customer.find().sort({ createdAt: -1 });
-    res.status(200).json(customers); // ✅ always array
-  } catch (err) {
-    res.status(500).json({
+
+    return res.status(200).json({
+      success: true,
+      total: customers.length,
+      customers,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
       message: "Failed to fetch customers",
-      error: err.message,
+      error: error.message,
     });
   }
 };
 
-// GET customer by ID
+// ================= GET CUSTOMER BY ID =================
 export const getCustomerById = async (req, res) => {
   try {
     const customer = await Customer.findById(req.params.id);
 
     if (!customer) {
-      return res.status(404).json({ message: "Customer not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
     }
 
-    res.status(200).json(customer);
-  } catch (err) {
-    res.status(500).json({
+    return res.status(200).json({
+      success: true,
+      customer,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
       message: "Failed to fetch customer",
-      error: err.message,
+      error: error.message,
     });
   }
 };
 
-// CREATE customer
+// ================= CREATE CUSTOMER =================
 export const createCustomer = async (req, res) => {
   try {
     const customer = new Customer(req.body);
     await customer.save();
 
-    res.status(201).json({
+    return res.status(201).json({
+      success: true,
       message: "Customer created successfully",
       customer,
     });
-  } catch (err) {
-    res.status(500).json({
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
       message: "Failed to create customer",
-      error: err.message,
+      error: error.message,
     });
   }
 };
 
-// UPDATE customer
+// ================= UPDATE CUSTOMER =================
 export const updateCustomer = async (req, res) => {
   try {
-    const updated = await Customer.findByIdAndUpdate(
+    const updatedCustomer = await Customer.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true }
     );
 
-    if (!updated) {
-      return res.status(404).json({ message: "Customer not found" });
+    if (!updatedCustomer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
+      success: true,
       message: "Customer updated successfully",
-      updated,
+      customer: updatedCustomer,
     });
-  } catch (err) {
-    res.status(500).json({
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
       message: "Failed to update customer",
-      error: err.message,
+      error: error.message,
     });
   }
 };
 
-// DELETE customer
+// ================= DELETE CUSTOMER =================
 export const deleteCustomer = async (req, res) => {
   try {
-    const deleted = await Customer.findByIdAndDelete(req.params.id);
+    const deletedCustomer = await Customer.findByIdAndDelete(req.params.id);
 
-    if (!deleted) {
-      return res.status(404).json({ message: "Customer not found" });
+    if (!deletedCustomer) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
     }
 
-    res.status(200).json({ message: "Customer deleted successfully" });
-  } catch (err) {
-    res.status(500).json({
+    return res.status(200).json({
+      success: true,
+      message: "Customer deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
       message: "Failed to delete customer",
-      error: err.message,
+      error: error.message,
     });
   }
 };
