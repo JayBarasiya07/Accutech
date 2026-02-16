@@ -20,6 +20,13 @@ const customerSchema = new mongoose.Schema(
     racks: String,
     cooling: String,
     roomAge: String,
+
+    // ✅ FIXED createdBy (inside schema)
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true }
 );

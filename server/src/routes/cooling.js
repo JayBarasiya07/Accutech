@@ -1,5 +1,6 @@
+// routes/cooling.js
 import express from "express";
-import Cooling from "../models/Cooling.js";
+import Cooling from "../models/Cooling.js"; // make sure this is the correct model file
 import { verifyToken, isAdminOrSuperAdmin } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();

@@ -4,18 +4,22 @@ import {
   Spinner, Alert, Badge, Card, ProgressBar,
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { FaTrash, FaKey, FaSync, FaCheckDouble, FaTimesCircle } from "react-icons/fa";
+import { 
+  FaTrash, FaKey, FaSync, FaCheckDouble, 
+  FaTimesCircle, FaUserShield, FaUser 
+} from "react-icons/fa";
 import SuperAdminLayout from "../../components/SuperAdmin/SuperAdminLayout";
 
 const API_BASE = "http://localhost:8000/api/users";
-const PERMISSION_API = "http://localhost:8000/api/permissions";
 
+// List of permission keys
 const permissionFields = [
   "srNo", "category", "salesPerson", "offices", "plants", "location",
   "contactPerson", "department", "designation", "mobile", "email",
   "decision", "currentUPS", "scopeSRC", "racks", "cooling", "roomAge",
 ];
 
+// Helper to turn camelCase into readable Labels
 const formatLabel = (str) =>
   str.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
 
@@ -31,6 +35,7 @@ const AdminUsers = ({ searchTerm = "" }) => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
+  // Get current User ID from token safely
   const loggedInUserId = useMemo(() => {
     try {
       return token ? JSON.parse(atob(token.split(".")[1])).id : null;
@@ -41,22 +46,20 @@ const AdminUsers = ({ searchTerm = "" }) => {
 
   const showAlert = (msg, type = "success") => {
     setStatus({ msg, type });
-    setTimeout(() => setStatus(null), 3500);
+    setTimeout(() => setStatus(null), 4000);
   };
 
+  // ================= LOAD DATA =================
   const loadUsers = useCallback(async () => {
     if (!token) return navigate("/login");
-
     setLoading(true);
     try {
       const res = await fetch(API_BASE, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!res.ok) throw new Error("Failed to load users");
-
+      if (!res.ok) throw new Error("Could not fetch user list");
       const data = await res.json();
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       showAlert(err.message, "danger");
     } finally {
@@ -68,6 +71,7 @@ const AdminUsers = ({ searchTerm = "" }) => {
     loadUsers();
   }, [loadUsers]);
 
+  // ================= FILTERING =================
   const filteredUsers = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return users.filter(
@@ -77,7 +81,7 @@ const AdminUsers = ({ searchTerm = "" }) => {
     );
   }, [users, searchTerm]);
 
-  // Toggle permission
+  // ================= PERMISSION HANDLERS =================
   const togglePermission = (field) => {
     setCurrentUser((prev) => ({
       ...prev,
@@ -88,22 +92,15 @@ const AdminUsers = ({ searchTerm = "" }) => {
     }));
   };
 
-  // Select all / clear all
   const bulkPermissions = (value) => {
     const updated = {};
     permissionFields.forEach((f) => (updated[f] = value));
-
-    setCurrentUser((prev) => ({
-      ...prev,
-      permissions: updated,
-    }));
+    setCurrentUser((prev) => ({ ...prev, permissions: updated }));
   };
 
   const savePermissions = async () => {
     if (!currentUser) return;
-
     setSaving(true);
-
     try {
       const res = await fetch(`${API_BASE}/${currentUser._id}/permissions`, {
         method: "PUT",
@@ -115,12 +112,11 @@ const AdminUsers = ({ searchTerm = "" }) => {
       });
 
       const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to update permissions");
 
-      if (!res.ok) throw new Error(data.message || "Update failed");
-
-      showAlert(`Permissions updated for ${currentUser.name}`, "success");
+      showAlert(`Permissions updated for ${currentUser.name} ✅`, "success");
       setShowModal(false);
-      loadUsers();
+      loadUsers(); // Refresh background data
     } catch (err) {
       showAlert(err.message, "danger");
     } finally {
@@ -128,26 +124,21 @@ const AdminUsers = ({ searchTerm = "" }) => {
     }
   };
 
+  // ================= DELETE HANDLER =================
   const deleteUser = async (id) => {
-    if (id === loggedInUserId)
-      return showAlert("You cannot delete yourself", "danger");
-
-    if (!window.confirm("Are you sure? This action is irreversible.")) return;
+    if (id === loggedInUserId) return showAlert("Security Error: You cannot delete yourself!", "danger");
+    if (!window.confirm("Permanent Action: Are you sure you want to delete this user?")) return;
 
     setDeletingId(id);
-
     try {
       const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message || "Delete failed");
+      if (!res.ok) throw new Error("Delete operation failed");
 
       setUsers((prev) => prev.filter((u) => u._id !== id));
-      showAlert("User successfully removed", "success");
+      showAlert("User account removed successfully", "success");
     } catch (err) {
       showAlert(err.message, "danger");
     } finally {
@@ -162,105 +153,85 @@ const AdminUsers = ({ searchTerm = "" }) => {
 
   return (
     <SuperAdminLayout
-      totalUsers={users.filter((u) => u.role === "user").length}
-      totalAdmins={users.filter((u) => u.role === "admin").length}
+      totalUsers={users.filter(u => u.role === 'user').length}
+      totalAdmins={users.filter(u => u.role === 'admin').length}
       refresh={loadUsers}
     >
-      <Card className="shadow-sm border-0">
+      <Card className="shadow-sm border-0 mt-3">
+        <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
+          <h5 className="mb-0 fw-bold text-dark">User Access Control</h5>
+          <Button size="sm" variant="light" onClick={loadUsers} disabled={loading} className="border">
+            <FaSync className={loading ? "fa-spin me-2" : "me-2"} />
+            {loading ? "Syncing..." : "Refresh"}
+          </Button>
+        </Card.Header>
         <Card.Body>
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h4 className="mb-0 text-primary">User Access Control</h4>
-            <Button
-              size="sm"
-              variant="outline-primary"
-              onClick={loadUsers}
-              disabled={loading}
-            >
-              <FaSync className={loading ? "fa-spin" : ""} />{" "}
-              {loading ? "Loading..." : "Refresh List"}
-            </Button>
-          </div>
-
-          {status && (
-            <Alert variant={status.type} className="py-2">
-              {status.msg}
-            </Alert>
-          )}
+          {status && <Alert variant={status.type} className="py-2 shadow-sm">{status.msg}</Alert>}
 
           {loading ? (
             <div className="text-center py-5">
-              <Spinner animation="grow" variant="primary" />
+              <Spinner animation="border" variant="primary" />
+              <p className="mt-2 text-muted">Fetching user permissions...</p>
             </div>
           ) : (
             <Table hover responsive className="align-middle">
               <thead className="table-light">
                 <tr>
-                  <th>#</th>
-                  <th>User Details</th>
+                  <th className="ps-3">Account</th>
                   <th>Role</th>
-                  <th>Access Level</th>
-                  <th className="text-end">Actions</th>
+                  <th>Access Coverage</th>
+                  <th className="text-end pe-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((u, i) => {
-                  const count = Object.values(u.permissions || {}).filter(
-                    Boolean
-                  ).length;
+                {filteredUsers.map((u) => {
+                  const count = Object.values(u.permissions || {}).filter(Boolean).length;
                   const progress = (count / permissionFields.length) * 100;
 
                   return (
                     <tr key={u._id}>
-                      <td>{i + 1}</td>
-
-                      <td>
-                        <div className="fw-bold">{u.name}</div>
-                        <small className="text-muted">{u.email}</small>
+                      <td className="ps-3">
+                        <div className="d-flex align-items-center">
+                          <div className={`p-2 rounded-circle me-3 ${u.role === 'admin' ? 'bg-primary' : 'bg-secondary'} bg-opacity-10 text-primary`}>
+                            {u.role === 'admin' ? <FaUserShield /> : <FaUser />}
+                          </div>
+                          <div>
+                            <div className="fw-bold">{u.name}</div>
+                            <div className="small text-muted">{u.email}</div>
+                          </div>
+                        </div>
                       </td>
-
                       <td>
-                        <Badge pill bg="info">
-                          {u.role}
+                        <Badge pill bg={u.role === 'admin' ? 'primary' : 'light'} className={u.role !== 'admin' ? 'text-dark border' : ''}>
+                          {u.role?.toUpperCase()}
                         </Badge>
                       </td>
-
-                      <td style={{ minWidth: "160px" }}>
-                        <div className="small mb-1">
-                          {count} of {permissionFields.length} enabled
+                      <td style={{ minWidth: "200px" }}>
+                        <div className="d-flex justify-content-between small mb-1">
+                          <span>{count} modules</span>
+                          <span className="text-muted">{Math.round(progress)}%</span>
                         </div>
-                        <ProgressBar
-                          now={progress}
-                          variant={progress === 100 ? "success" : "info"}
-                          style={{ height: "6px" }}
-                        />
+                        <ProgressBar now={progress} variant={progress === 100 ? "success" : "primary"} style={{ height: "6px" }} />
                       </td>
-
-                      <td className="text-end">
+                      <td className="text-end pe-3">
                         <Button
                           size="sm"
-                          variant="light"
-                          className="me-2 text-primary border"
+                          variant="outline-primary"
+                          className="me-2"
                           onClick={() => {
-                            // deep clone to prevent table data mutation
-                            setCurrentUser(JSON.parse(JSON.stringify(u)));
+                            setCurrentUser(JSON.parse(JSON.stringify(u))); // Deep clone
                             setShowModal(true);
                           }}
                         >
-                          <FaKey /> Manage
+                          <FaKey className="me-1" /> Access
                         </Button>
-
                         <Button
                           size="sm"
-                          variant="light"
-                          className="text-danger border"
-                          disabled={deletingId === u._id}
+                          variant="outline-danger"
+                          disabled={deletingId === u._id || u._id === loggedInUserId}
                           onClick={() => deleteUser(u._id)}
                         >
-                          {deletingId === u._id ? (
-                            <Spinner size="sm" />
-                          ) : (
-                            <FaTrash />
-                          )}
+                          {deletingId === u._id ? <Spinner size="sm" /> : <FaTrash />}
                         </Button>
                       </td>
                     </tr>
@@ -273,95 +244,45 @@ const AdminUsers = ({ searchTerm = "" }) => {
       </Card>
 
       {/* PERMISSION MODAL */}
-      <Modal
-        show={showModal}
-        onHide={() => setShowModal(false)}
-        size="lg"
-        centered
-        backdrop="static"
-      >
+      <Modal show={showModal} onHide={() => !saving && setShowModal(false)} size="lg" centered backdrop="static">
         <Modal.Header closeButton className="bg-light">
-          <Modal.Title>Permissions: {currentUser?.name}</Modal.Title>
+          <Modal.Title className="h6 fw-bold">Manage Permissions: {currentUser?.name}</Modal.Title>
         </Modal.Header>
-
         <Modal.Body className="bg-light-subtle">
-          <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-white rounded border">
+          <div className="d-flex justify-content-between align-items-center mb-3 p-3 bg-white rounded border shadow-sm">
             <div>
-              <h6 className="mb-1">Access Progress</h6>
-              <small className="text-muted">{activeCount} modules active</small>
+              <p className="mb-0 small fw-bold">Quick Actions</p>
+              <small className="text-muted">{activeCount} of {permissionFields.length} permissions enabled</small>
             </div>
-
             <div className="d-flex gap-2">
-              <Button
-                size="sm"
-                variant="outline-success"
-                onClick={() => bulkPermissions(true)}
-              >
-                <FaCheckDouble /> Select All
-              </Button>
-
-              <Button
-                size="sm"
-                variant="outline-danger"
-                onClick={() => bulkPermissions(false)}
-              >
-                <FaTimesCircle /> Clear All
-              </Button>
+              <Button size="sm" variant="outline-success" onClick={() => bulkPermissions(true)}><FaCheckDouble className="me-1" /> All</Button>
+              <Button size="sm" variant="outline-danger" onClick={() => bulkPermissions(false)}><FaTimesCircle className="me-1" /> None</Button>
             </div>
           </div>
 
-          <Row className="g-3">
+          <Row className="g-2">
             {permissionFields.map((field) => (
               <Col md={4} key={field}>
-                <Card
-                  className={`h-100 shadow-sm ${
-                    currentUser?.permissions?.[field]
-                      ? "border-success bg-success-subtle"
-                      : "border-light"
-                  }`}
-                  style={{ cursor: "pointer", transition: "0.2s" }}
+                <div 
+                  className={`p-2 rounded border d-flex justify-content-between align-items-center transition-all ${currentUser?.permissions?.[field] ? 'bg-white border-primary' : 'bg-light text-muted'}`}
+                  style={{ cursor: 'pointer', fontSize: '0.85rem' }}
                   onClick={() => togglePermission(field)}
                 >
-                  <Card.Body className="p-2 d-flex justify-content-between align-items-center">
-                    <span className="small fw-semibold">
-                      {formatLabel(field)}
-                    </span>
-
-                    <Form.Check
-                      type="switch"
-                      checked={!!currentUser?.permissions?.[field]}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={() => togglePermission(field)}
-                    />
-                  </Card.Body>
-                </Card>
+                  <span className={currentUser?.permissions?.[field] ? 'fw-bold' : ''}>{formatLabel(field)}</span>
+                  <Form.Check 
+                    type="switch"
+                    checked={!!currentUser?.permissions?.[field]}
+                    onChange={() => {}} // Handled by div onClick
+                  />
+                </div>
               </Col>
             ))}
           </Row>
         </Modal.Body>
-
-        <Modal.Footer>
-          <Button
-            variant="link"
-            className="text-muted text-decoration-none"
-            onClick={() => setShowModal(false)}
-          >
-            Discard Changes
-          </Button>
-
-          <Button
-            variant="primary"
-            onClick={savePermissions}
-            disabled={saving}
-            className="px-4"
-          >
-            {saving ? (
-              <>
-                <Spinner size="sm" className="me-2" /> Saving...
-              </>
-            ) : (
-              "Apply Permissions"
-            )}
+        <Modal.Footer className="bg-white">
+          <Button variant="link" className="text-muted" onClick={() => setShowModal(false)} disabled={saving}>Cancel</Button>
+          <Button variant="primary" onClick={savePermissions} disabled={saving} className="px-4 shadow-sm">
+            {saving ? <><Spinner size="sm" className="me-2" /> Saving...</> : "Save Permissions"}
           </Button>
         </Modal.Footer>
       </Modal>

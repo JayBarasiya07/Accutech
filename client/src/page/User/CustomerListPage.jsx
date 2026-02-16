@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Container, Table, Form, Row, Col, Alert, Spinner } from "react-bootstrap";
+import {
+  Container,
+  Table,
+  Form,
+  Row,
+  Col,
+  Alert,
+  Spinner,
+} from "react-bootstrap";
 import axios from "axios";
 
 const CustomerList = () => {
@@ -14,12 +22,13 @@ const CustomerList = () => {
     const fetchCustomers = async () => {
       try {
         setLoading(true);
+        setError("");
 
         const token = localStorage.getItem("token");
 
         if (!token) {
-          setError("Token missing. Please login again.");
-          setLoading(false);
+          setError("Token missing! Please login again.");
+          setCustomers([]);
           return;
         }
 
@@ -29,16 +38,32 @@ const CustomerList = () => {
           },
         });
 
-        console.log("CUSTOMERS RESPONSE:", res.data);
+        console.log("CUSTOMER API RESPONSE:", res.data);
 
-        const data = res.data.customers || res.data;
+        // backend response handle
+        let data = [];
 
-        setCustomers(Array.isArray(data) ? data : []);
-        setError("");
+        if (Array.isArray(res.data)) {
+          data = res.data;
+        } else if (res.data?.customers && Array.isArray(res.data.customers)) {
+          data = res.data.customers;
+        } else {
+          data = [];
+        }
+
+        setCustomers(data);
       } catch (err) {
-        console.log("Fetch Error:", err);
+        console.log("Fetch Customers Error:", err.response?.data || err.message);
 
-        setError(err?.response?.data?.message || "Failed to fetch customers");
+        if (err.response?.status === 401) {
+          setError("Unauthorized! Please login again.");
+        } else if (err.response?.status === 403) {
+          setError("Permission denied! You cannot access customers.");
+        } else {
+          setError(err.response?.data?.message || "Failed to fetch customers.");
+        }
+
+        setCustomers([]);
       } finally {
         setLoading(false);
       }
@@ -60,8 +85,13 @@ const CustomerList = () => {
         String(c.category || "").toLowerCase().includes(searchText) ||
         String(c.customername || "").toLowerCase().includes(searchText);
 
-      const matchesCategory = categoryFilter ? c.category === categoryFilter : true;
-      const matchesDecision = decisionFilter ? c.decision === decisionFilter : true;
+      const matchesCategory = categoryFilter
+        ? String(c.category || "") === categoryFilter
+        : true;
+
+      const matchesDecision = decisionFilter
+        ? String(c.decision || "") === decisionFilter
+        : true;
 
       return matchesSearch && matchesCategory && matchesDecision;
     });
@@ -77,7 +107,7 @@ const CustomerList = () => {
 
   return (
     <Container className="mt-5">
-      <h2 className="mb-4 fw-bold">Customer List</h2>
+      <h2 className="mb-4 fw-bold text-center">Customer List</h2>
 
       {error && <Alert variant="danger">{error}</Alert>}
 
@@ -89,16 +119,16 @@ const CustomerList = () => {
       ) : (
         <>
           <Row className="mb-3">
-            <Col md={4}>
+            <Col md={4} sm={12} className="mb-2">
               <Form.Control
                 type="text"
-                placeholder="Search..."
+                placeholder="Search customer..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </Col>
 
-            <Col md={3}>
+            <Col md={4} sm={6} className="mb-2">
               <Form.Select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
@@ -112,7 +142,7 @@ const CustomerList = () => {
               </Form.Select>
             </Col>
 
-            <Col md={3}>
+            <Col md={4} sm={6} className="mb-2">
               <Form.Select
                 value={decisionFilter}
                 onChange={(e) => setDecisionFilter(e.target.value)}
@@ -127,8 +157,8 @@ const CustomerList = () => {
             </Col>
           </Row>
 
-          <Table striped bordered hover responsive>
-            <thead className="table-dark text-center">
+          <Table striped bordered hover responsive className="text-center">
+            <thead className="table-dark">
               <tr>
                 <th>No.</th>
                 <th>Sr No</th>
@@ -155,7 +185,7 @@ const CustomerList = () => {
             <tbody>
               {filteredCustomers.length > 0 ? (
                 filteredCustomers.map((c, index) => (
-                  <tr key={c._id}>
+                  <tr key={c._id || index}>
                     <td>{index + 1}</td>
                     <td>{c.srNo || "-"}</td>
                     <td>{c.category || "-"}</td>
@@ -172,7 +202,6 @@ const CustomerList = () => {
                     <td>{c.decision || "-"}</td>
                     <td>{c.currentUPS || "-"}</td>
                     <td>{c.scopeSRC || "-"}</td>
-                    <td>{c.scopeSRC || "-"}</td>
                     <td>{c.racks || "-"}</td>
                     <td>{c.cooling || "-"}</td>
                     <td>{c.roomAge || "-"}</td>
@@ -180,13 +209,17 @@ const CustomerList = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="19" className="text-center text-danger fw-bold">
+                  <td colSpan="19" className="text-danger fw-bold">
                     No customers found
                   </td>
                 </tr>
               )}
             </tbody>
           </Table>
+
+          <p className="text-muted fw-bold">
+            Total Customers: {filteredCustomers.length}
+          </p>
         </>
       )}
     </Container>
