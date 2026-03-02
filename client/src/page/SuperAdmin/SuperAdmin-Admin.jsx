@@ -159,7 +159,7 @@ const AdminUsers = ({ searchTerm = "" }) => {
     >
       <Card className="shadow-sm border-0 mt-3">
         <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
-          <h5 className="mb-0 fw-bold text-dark">User Access Control</h5>
+          <h5 className="mb-0 fw-bold text-dark">Admin Access Control</h5>
           <Button size="sm" variant="light" onClick={loadUsers} disabled={loading} className="border">
             <FaSync className={loading ? "fa-spin me-2" : "me-2"} />
             {loading ? "Syncing..." : "Refresh"}

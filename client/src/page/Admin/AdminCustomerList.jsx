@@ -34,34 +34,34 @@ const AdminCustomerList = () => {
   const itemsPerPage = 10;
 
   // ================= FETCH CUSTOMERS =================
-  const fetchCustomers = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const res = await axios.get("http://localhost:8000/api/customers", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setCustomers(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("Fetch customers error:", err);
-
-      if (err?.response?.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/login");
-      } else {
-        setError(err?.response?.data?.message || "Failed to fetch customers");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const res = await axios.get("http://localhost:8000/api/customers", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setCustomers(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error("Fetch customers error:", err);
+
+        if (err?.response?.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          navigate("/login");
+        } else {
+          setError(err?.response?.data?.message || "Failed to fetch customers");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (token) fetchCustomers();
-  }, [token]);
+  }, [token, navigate, isAdminOrSuper]);
 
   // ================= DELETE CUSTOMER =================
   const handleDelete = async (id) => {
@@ -126,7 +126,7 @@ const AdminCustomerList = () => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
     }
-  }, [totalPages]);
+  }, [totalPages, currentPage]);
 
   // ================= AUTH =================
   if (!token) return <Navigate to="/login" replace />;
@@ -178,15 +178,7 @@ const AdminCustomerList = () => {
       <Col md={isAdminOrSuper ? 10 : 12} className="p-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div className="d-flex align-items-center gap-2">
-            {isAdminOrSuper && (
-              <Button
-                variant="dark"
-                className="d-md-none"
-                onClick={() => setShowSidebar(true)}
-              >
-                ☰
-              </Button>
-            )}
+            
 
             <h2 className="mb-0">Customer List</h2>
           </div>

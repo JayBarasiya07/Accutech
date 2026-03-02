@@ -293,13 +293,7 @@ const SuperAdminCustomerList = () => {
             <Card.Body className="p-4">
               <Row className="align-items-center">
                 <Col>
-                  <Button
-                    variant="light"
-                    className="d-md-none me-3"
-                    onClick={() => setShowSidebar(true)}
-                  >
-                    ☰
-                  </Button>
+                 
                   <h3 className="d-inline-block mb-0 fw-bold">
                     Customer Directory
                   </h3>
