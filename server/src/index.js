@@ -13,6 +13,8 @@ import aboutRoutes from "./routes/aboutRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminRouters from "./routes/adminRoutes.js";
 
+import productRoutes from "./routes/productRoutes.js";
+
 dotenv.config();
 
 const app = express();
@@ -34,6 +36,7 @@ app.use("/api/customers", customerRouter);
 app.use("/api/about", aboutRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRouters);
+app.use("/api/products", productRoutes);
 
 // Test Route
 app.get("/", (req, res) => {

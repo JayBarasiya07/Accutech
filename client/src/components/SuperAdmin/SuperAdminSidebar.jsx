@@ -17,9 +17,11 @@ const SuperAdminSidebar = () => {
 
   const navLinks = [
     { path: "/superadmin/dashboard", label: "Dashboard", icon: <FaTachometerAlt /> },
-    { path: "/superadmin/users", label: "Admin Manage", icon: <FaUserTie /> },
+    // { path: "/superadmin/users", label: "Admin Manage", icon: <FaUserTie /> },
     { path: "/superadmin/customers", label: "Customers", icon: <FaUsers /> },
+    {path: "/superadmin/productsList", label: "Products", icon: <FaCogs /> },
     { path: "/superadmin/settings", label: "Settings", icon: <FaCogs /> },
+    
   ];
 
   const handleLogout = () => {

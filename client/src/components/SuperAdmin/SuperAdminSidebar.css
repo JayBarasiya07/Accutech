@@ -342,3 +342,78 @@
     padding: 15px !important;
   }
 }
+
+
+
+/* ============================================ */
+/*         SuperAdmin Product Table CSS         */
+/* ============================================ */
+
+.product-table-wrapper {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  overflow-x: auto;
+}
+
+.product-table thead th {
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.product-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.product-table tbody tr:hover {
+  background: rgba(13,110,253,0.05);
+  transform: scale(1.002);
+}
+
+.product-table td {
+  vertical-align: middle;
+  font-size: 0.95rem;
+}
+
+.stock-badge {
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+/* Buttons spacing fix */
+.product-table .btn {
+  min-width: 60px;
+}
+
+/* Responsive table adjustments */
+@media (max-width: 768px) {
+
+  .product-table-wrapper {
+    padding: 10px;
+  }
+
+  .product-table td,
+  .product-table th {
+    font-size: 0.85rem;
+    padding: 10px;
+  }
+
+}
+
+/* Add Product Button */
+
+.add-product-btn{
+  font-weight:600;
+  padding:8px 18px;
+  border-radius:8px;
+  box-shadow:0 4px 10px rgba(13,110,253,0.25);
+  transition:all .2s ease;
+}
+
+.add-product-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 15px rgba(13,110,253,0.35);
+}

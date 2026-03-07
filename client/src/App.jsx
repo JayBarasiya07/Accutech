@@ -39,6 +39,9 @@ import SuperAdminDashboard from "./page/SuperAdmin/SuperAdminDashboard";
 import SuperAdminUsers from "./page/SuperAdmin/SuperAdmin-Admin";
 import SuperAdminCustomerList from "./page/SuperAdmin/SuperAdminCustomerList";
 import SuperAdminAddCustomer from "./page/SuperAdmin/SuperAdminAddCustomer";
+import SuperAdminProducts from "./page/SuperAdmin/SuperAdminProductsList";
+import SuperAdminProductsList from "./page/SuperAdmin/SuperAdminProductsList";
+import AddProductModal from "./page/SuperAdmin/AddProductModal";
 
 
 // ---------------- LAYOUTS ----------------
@@ -107,6 +110,9 @@ const App = () => (
       <Route path="/superadmin/customers" element={<SuperAdminCustomerList />} />
       <Route path="/superadmin/customers/add" element={<SuperAdminAddCustomer />} />
       <Route path="/superadmin/customers/edit/:id" element={<SuperAdminAddCustomer />} />
+      <Route path="/superadmin/productsList" element={<SuperAdminProductsList />} />
+      <Route path="/superadmin/productsList/edit/:id" element={<SuperAdminProducts />} />
+      <Route path="/superadmin/products/add" element={<AddProductModal />} />
       
       {/* Add more SuperAdmin routes here as needed */}
     </Routes>
