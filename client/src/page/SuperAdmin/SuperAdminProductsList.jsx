@@ -10,12 +10,14 @@ import {
   Card,
   Spinner,
   Alert,
+  Image
 } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import SuperAdminLayout from "../../components/SuperAdmin/SuperAdminLayout";
 
 export default function SuperAdminProductsList() {
+
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
@@ -34,7 +36,9 @@ export default function SuperAdminProductsList() {
       });
 
       setProducts(res.data || []);
+
     } catch (err) {
+
       console.error(err);
 
       if (err.response?.status === 401) {
@@ -43,6 +47,7 @@ export default function SuperAdminProductsList() {
       } else {
         setError("Failed to load products");
       }
+
     } finally {
       setLoading(false);
     }
@@ -54,28 +59,35 @@ export default function SuperAdminProductsList() {
 
   // ================= DELETE PRODUCT =================
   const handleDelete = async (id) => {
+
     if (!window.confirm("Delete this product?")) return;
 
     try {
+
       await axios.delete(`http://localhost:8000/api/products/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       fetchProducts();
+
     } catch (err) {
+
       console.error(err);
       alert("Delete failed");
+
     }
   };
 
-  // ================= SEARCH FILTER =================
+  // ================= SEARCH =================
   const filteredProducts = products.filter((p) => {
-    const searchTerm = search.toLowerCase();
+
+    const term = search.toLowerCase();
 
     return (
-      p?.name?.toLowerCase().includes(searchTerm) ||
-      p?.brand?.toLowerCase().includes(searchTerm)
+      p?.name?.toLowerCase().includes(term) ||
+      p?.brand?.toLowerCase().includes(term)
     );
+
   });
 
   // ================= LOADING =================
@@ -94,7 +106,7 @@ export default function SuperAdminProductsList() {
         {/* Header */}
         <Row className="align-items-center mb-4 g-3">
           <Col md={6}>
-            <h4 className="page-title mb-0 fw-bold">Product Management</h4>
+            <h4 className="fw-bold mb-0">Product Management</h4>
             <p className="text-muted small mb-0">
               Manage your inventory and stock levels
             </p>
@@ -128,19 +140,23 @@ export default function SuperAdminProductsList() {
           </Card.Body>
         </Card>
 
-        {/* Product Table */}
-        <div className="product-table-wrapper shadow-sm rounded overflow-hidden">
+        {/* Table */}
+        <div className="shadow-sm rounded overflow-hidden">
+
           {filteredProducts.length === 0 ? (
+
             <div className="text-center p-5 bg-white border">
               <h6 className="text-muted mb-0">No products found</h6>
             </div>
+
           ) : (
+
             <Table hover responsive className="align-middle bg-white mb-0">
+
               <thead className="table-dark">
                 <tr>
-                  <th style={{ width: "25%" }} className="ps-4">
-                    Product Name
-                  </th>
+                  <th>Image</th>
+                  <th>Product</th>
                   <th>Brand</th>
                   <th>Capacity</th>
                   <th>Price</th>
@@ -150,22 +166,49 @@ export default function SuperAdminProductsList() {
               </thead>
 
               <tbody>
+
                 {filteredProducts.map((p) => {
+
                   const price = Number(p?.price) || 0;
                   const stock = Number(p?.stock) || 0;
 
                   return (
                     <tr key={p._id}>
-                      <td className="fw-bold ps-4">{p?.name}</td>
 
+                      {/* IMAGE */}
+                      <td style={{ width: "80px" }}>
+                        <Image
+                          src={
+                            p?.images?.length
+                              ? `http://localhost:8000/${p.images[0]}`
+                              : "/no-image.png"
+                          }
+                          rounded
+                          style={{
+                            width: "55px",
+                            height: "55px",
+                            objectFit: "cover"
+                          }}
+                        />
+                      </td>
+
+                      {/* NAME */}
+                      <td className="fw-bold">
+                        {p?.name}
+                      </td>
+
+                      {/* BRAND */}
                       <td>{p?.brand}</td>
 
+                      {/* CAPACITY */}
                       <td>{p?.capacity}</td>
 
-                      <td className="fw-bold text-dark">
+                      {/* PRICE */}
+                      <td className="fw-bold">
                         ₹{price.toLocaleString("en-IN")}
                       </td>
 
+                      {/* STOCK */}
                       <td>
                         <Badge
                           pill
@@ -176,18 +219,19 @@ export default function SuperAdminProductsList() {
                               ? "danger"
                               : "success"
                           }
-                          style={{ minWidth: "40px" }}
                         >
-                          {stock === 0 ? "Out of Stock" : stock}
+                          {stock === 0 ? "Out" : stock}
                         </Badge>
                       </td>
 
+                      {/* ACTIONS */}
                       <td>
                         <Stack
                           direction="horizontal"
                           gap={2}
                           className="justify-content-center"
                         >
+
                           <Button
                             variant="light"
                             size="sm"
@@ -216,14 +260,20 @@ export default function SuperAdminProductsList() {
                           >
                             Delete
                           </Button>
+
                         </Stack>
                       </td>
+
                     </tr>
                   );
                 })}
+
               </tbody>
+
             </Table>
+
           )}
+
         </div>
 
       </div>

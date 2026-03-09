@@ -1,4 +1,5 @@
 import express from "express";
+import upload from "../middlewares/upload.js";
 
 import {
   addProduct,
@@ -11,18 +12,54 @@ import {
 import {
   verifyToken,
   isAdminOrSuperAdmin,
-  isSuperAdmin,
+  isSuperAdmin
 } from "../middlewares/authMiddleware.js";
+
 const router = express.Router();
 
-router.post("/", verifyToken, isSuperAdmin, addProduct);
 
-router.get("/", verifyToken, getProducts);
+// ================= ADD PRODUCT =================
+router.post(
+  "/",
+  verifyToken,
+  isSuperAdmin,
+  upload.single("image"),
+  addProduct
+);
 
-router.get("/:id", verifyToken, getProductById);
 
-router.put("/:id", verifyToken, isSuperAdmin, updateProduct);
+// ================= GET ALL PRODUCTS =================
+router.get(
+  "/",
+  verifyToken,
+  getProducts
+);
 
-router.delete("/:id", verifyToken, isSuperAdmin, deleteProduct);
+
+// ================= GET SINGLE PRODUCT =================
+router.get(
+  "/:id",
+  verifyToken,
+  getProductById
+);
+
+
+// ================= UPDATE PRODUCT =================
+router.put(
+  "/:id",
+  verifyToken,
+  isSuperAdmin,
+  upload.single("image"),
+  updateProduct
+);
+
+
+// ================= DELETE PRODUCT =================
+router.delete(
+  "/:id",
+  verifyToken,
+  isSuperAdmin,
+  deleteProduct
+);
 
 export default router;

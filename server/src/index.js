@@ -37,6 +37,7 @@ app.use("/api/about", aboutRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRouters);
 app.use("/api/products", productRoutes);
+app.use("/uploads", express.static("uploads"));
 
 // Test Route
 app.get("/", (req, res) => {
