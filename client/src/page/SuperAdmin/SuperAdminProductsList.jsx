@@ -1,282 +1,130 @@
-import React, { useState, useEffect } from "react";
-import {
-  Table,
-  Button,
-  Stack,
-  Badge,
-  Form,
-  Row,
-  Col,
-  Card,
-  Spinner,
-  Alert,
-  Image
-} from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { Button, Container, Form } from "react-bootstrap";
 import SuperAdminLayout from "../../components/SuperAdmin/SuperAdminLayout";
+import ProductTable from "../../components/SuperAdmin/ProductTable";
+import ProductFormModal from "../../components/SuperAdmin/ProductFormModal";
+import {
+  getProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct
+} from "../../components/SuperAdmin/productService";
 
-export default function SuperAdminProductsList() {
+export default function SuperAdminProducts() {
 
-  const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
   const [products, setProducts] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  // ================= FETCH PRODUCTS =================
+  // ================= Fetch Products =================
   const fetchProducts = async () => {
     try {
-      setLoading(true);
-
-      const res = await axios.get("http://localhost:8000/api/products", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setProducts(res.data || []);
-
+      const res = await getProducts(token);
+      setProducts(res.data);
     } catch (err) {
-
-      console.error(err);
-
-      if (err.response?.status === 401) {
-        setError("Session expired. Please login again.");
-        setTimeout(() => navigate("/login"), 1500);
-      } else {
-        setError("Failed to load products");
-      }
-
-    } finally {
-      setLoading(false);
+      console.error("Failed to load products", err);
     }
   };
 
   useEffect(() => {
-    if (token) fetchProducts();
+    (async () => {
+      await fetchProducts();
+    })();
   }, []);
 
-  // ================= DELETE PRODUCT =================
-  const handleDelete = async (id) => {
+  // ================= Add Product =================
+  const openAdd = () => {
+    setEditProduct(null);
+    setShowModal(true);
+  };
+
+  // ================= Edit Product =================
+  const openEdit = (product) => {
+    setEditProduct(product);
+    setShowModal(true);
+  };
+
+  // ================= Save Product =================
+  const saveProduct = async (data) => {
+
+    try {
+
+      if (editProduct) {
+        await updateProduct(editProduct._id, data, token);
+      } else {
+        await createProduct(data, token);
+      }
+
+      setShowModal(false);
+      fetchProducts();
+
+    } catch (err) {
+      console.error("Save failed", err);
+    }
+
+  };
+
+  // ================= Delete Product =================
+  const removeProduct = async (id) => {
 
     if (!window.confirm("Delete this product?")) return;
 
     try {
-
-      await axios.delete(`http://localhost:8000/api/products/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      await deleteProduct(id, token);
       fetchProducts();
-
     } catch (err) {
-
-      console.error(err);
-      alert("Delete failed");
-
+      console.error("Delete failed", err);
     }
+
   };
 
-  // ================= SEARCH =================
-  const filteredProducts = products.filter((p) => {
-
-    const term = search.toLowerCase();
-
-    return (
-      p?.name?.toLowerCase().includes(term) ||
-      p?.brand?.toLowerCase().includes(term)
-    );
-
-  });
-
-  // ================= LOADING =================
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center vh-100">
-        <Spinner animation="border" />
-      </div>
-    );
-  }
+  // ================= Search =================
+  const filtered = products.filter((p) =>
+    p.name?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
+
     <SuperAdminLayout>
-      <div className="main-content-area p-4">
 
-        {/* Header */}
-        <Row className="align-items-center mb-4 g-3">
-          <Col md={6}>
-            <h4 className="fw-bold mb-0">Product Management</h4>
-            <p className="text-muted small mb-0">
-              Manage your inventory and stock levels
-            </p>
-          </Col>
+      <Container fluid className="p-4">
 
-          <Col md={6} className="text-md-end">
-            <Link to="/superadmin/products/add">
-              <Button variant="primary" className="px-4 shadow-sm">
-                + Add New Product
-              </Button>
-            </Link>
-          </Col>
-        </Row>
+        <h3 className="mb-4">Product Management</h3>
 
-        {error && <Alert variant="danger">{error}</Alert>}
+        <div className="d-flex justify-content-between mb-3">
 
-        {/* Search */}
-        <Card className="border-0 shadow-sm mb-4">
-          <Card.Body>
-            <Row>
-              <Col md={5} lg={4}>
-                <Form.Control
-                  type="text"
-                  placeholder="Search by name or brand..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="bg-light border-0"
-                />
-              </Col>
-            </Row>
-          </Card.Body>
-        </Card>
+          <Form.Control
+            placeholder="Search product..."
+            style={{ width: "250px" }}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
 
-        {/* Table */}
-        <div className="shadow-sm rounded overflow-hidden">
-
-          {filteredProducts.length === 0 ? (
-
-            <div className="text-center p-5 bg-white border">
-              <h6 className="text-muted mb-0">No products found</h6>
-            </div>
-
-          ) : (
-
-            <Table hover responsive className="align-middle bg-white mb-0">
-
-              <thead className="table-dark">
-                <tr>
-                  <th>Image</th>
-                  <th>Product</th>
-                  <th>Brand</th>
-                  <th>Capacity</th>
-                  <th>Price</th>
-                  <th>Stock</th>
-                  <th className="text-center">Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-
-                {filteredProducts.map((p) => {
-
-                  const price = Number(p?.price) || 0;
-                  const stock = Number(p?.stock) || 0;
-
-                  return (
-                    <tr key={p._id}>
-
-                      {/* IMAGE */}
-                      <td style={{ width: "80px" }}>
-                        <Image
-                          src={
-                            p?.images?.length
-                              ? `http://localhost:8000/${p.images[0]}`
-                              : "/no-image.png"
-                          }
-                          rounded
-                          style={{
-                            width: "55px",
-                            height: "55px",
-                            objectFit: "cover"
-                          }}
-                        />
-                      </td>
-
-                      {/* NAME */}
-                      <td className="fw-bold">
-                        {p?.name}
-                      </td>
-
-                      {/* BRAND */}
-                      <td>{p?.brand}</td>
-
-                      {/* CAPACITY */}
-                      <td>{p?.capacity}</td>
-
-                      {/* PRICE */}
-                      <td className="fw-bold">
-                        ₹{price.toLocaleString("en-IN")}
-                      </td>
-
-                      {/* STOCK */}
-                      <td>
-                        <Badge
-                          pill
-                          bg={
-                            stock === 0
-                              ? "secondary"
-                              : stock < 10
-                              ? "danger"
-                              : "success"
-                          }
-                        >
-                          {stock === 0 ? "Out" : stock}
-                        </Badge>
-                      </td>
-
-                      {/* ACTIONS */}
-                      <td>
-                        <Stack
-                          direction="horizontal"
-                          gap={2}
-                          className="justify-content-center"
-                        >
-
-                          <Button
-                            variant="light"
-                            size="sm"
-                            className="border"
-                            onClick={() =>
-                              navigate(`/superadmin/products/view/${p._id}`)
-                            }
-                          >
-                            View
-                          </Button>
-
-                          <Button
-                            variant="outline-warning"
-                            size="sm"
-                            onClick={() =>
-                              navigate(`/superadmin/products/edit/${p._id}`)
-                            }
-                          >
-                            Edit
-                          </Button>
-
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => handleDelete(p._id)}
-                          >
-                            Delete
-                          </Button>
-
-                        </Stack>
-                      </td>
-
-                    </tr>
-                  );
-                })}
-
-              </tbody>
-
-            </Table>
-
-          )}
+          <Button variant="primary" onClick={openAdd}>
+            Add Product
+          </Button>
 
         </div>
 
-      </div>
+        <ProductTable
+          products={filtered}
+          onEdit={openEdit}
+          onDelete={removeProduct}
+        />
+
+        <ProductFormModal
+          show={showModal}
+          handleClose={() => setShowModal(false)}
+          handleSave={saveProduct}
+          initialData={editProduct}
+        />
+
+      </Container>
+
     </SuperAdminLayout>
+
   );
 }
